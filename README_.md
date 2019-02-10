@@ -14,9 +14,11 @@ markdown:
 
 <p align="center">PytorX helps you evaluate Neural Network performance on Crossbar Accelerator.</p>
 
-<!-- ![PyTorch Logo](./imgs/pytorx_logo3.jpeg) -->
 
---------------------------------------------------------------------------------
+<!-- -------------------------------------------------------------------------------- -->
+
+Getting Started with PytorX
+------------------------------
 
 This project aims at building an easy-to-use framework for neural network mapping on crossbar-based accelerator with resistive memory (e.g., ReRAM, MRAM, etc.).
 
