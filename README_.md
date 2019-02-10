@@ -6,11 +6,20 @@ markdown:
   absolute_image_path: false #是否使用绝对（相对于项目文件夹）图片路径
 ---
 
-![PyTorch Logo](./imgs/pytorx_logo3.jpeg)<!-- .element height="50%" width="50%" -->
+<p align="center">
+  <img src="./imgs/pytorx_logo3.jpeg" alt="Slate: API Documentation Generator" width="350">
+  <br>
+  <a href="https://travis-ci.org/lord/slate"><img src="https://travis-ci.org/lord/slate.svg?branch=master" alt="Build Status"></a>
+</p>
+
+<p align="center">PytorX helps you evaluate Neural Network performance on Crossbar Accelerator.</p>
+
+<!-- ![PyTorch Logo](./imgs/pytorx_logo3.jpeg) -->
 
 --------------------------------------------------------------------------------
 
-This project aims at building an easy-to-use framework for neural network mapping on crossbar-based accelerator with resistive memory.
+This project aims at building an easy-to-use framework for neural network mapping on crossbar-based accelerator with resistive memory (e.g., ReRAM, MRAM, etc.).
+
 
 - [Dependencies](#Dependencies)
 - [Usage](#Usage)
