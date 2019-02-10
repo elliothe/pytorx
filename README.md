@@ -6,6 +6,9 @@ markdown:
   absolute_image_path: false #是否使用绝对（相对于项目文件夹）图片路径
 ---
 
+![PyTorch Logo](https://github.com/pytorch/pytorch/blob/master/docs/source/_static/img/pytorch-logo-dark.png)
+
+--------------------------------------------------------------------------------
 
 # PytorX
 
@@ -19,9 +22,14 @@ This project aims at building an easy-to-use framework for neural network mappin
 
 If you find this project useful to you, please cite [our work](https://arxiv.org/abs/1807.07948):
 ```
-Zhezhi He, Jie Lin, and Deliang Fan. 
-"Optimize Deep Convolutional Neural Network with Ternarized Weights and High Accuracy." 
-arXiv preprint arXiv:1807.07948 (2018).
+@inproceedings{He2019NIA,
+  title={Noise Injection Adaption: End-to-End ReRAM Crossbar Non-ideal Effect Adaption for Neural Network Mapping},
+  author={He, Zhezhi and Lin, Jie and Ewetz, Rickard and Yuan, Jiann-Shiun and Fan, Deliang},
+  booktitle={Proceedings of the 56th Annual Design Automation Conference},
+  pages={105},
+  year={2019},
+  organization={ACM}
+}
 ```
 ## Dependencies:
 
@@ -47,5 +55,5 @@ python main.py --
 - [x] @mentions, #refs, [links](), **formatting**, and <del>tags</del> supported
 - [x] list syntax required (any unordered or ordered list supported)
 - [x] this is a complete item
-- [ ] this is an incomplete item
+- [ ] Evaluation of accelerator characteristics in terms of latency, power, etc.
 
