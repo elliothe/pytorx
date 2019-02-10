@@ -1,30 +1,41 @@
-  
-  
+---
+markdown:
+  image_dir: /assets
+  path: README.md
+  ignore_from_front_matter: true
+  absolute_image_path: false #是否使用绝对（相对于项目文件夹）图片路径
+---
+
 <p align="center">
   <img src="./imgs/pytorx_logo3.jpeg" alt="Slate: API Documentation Generator" width="700">
   <br>
   <a href="https://travis-ci.org/lord/slate"><img src="https://travis-ci.org/lord/slate.svg?branch=master" alt="Build Status"></a>
 </p>
-  
+
 <p align="center">PytorX helps you evaluate Neural Network performance on Crossbar Accelerator.</p>
-  
-  
-  
-  
-  
+
+Features
+--------------------------------------------------------------------------------
+
+* **Clean and Easy-to-Ues** —
+
+* **Evaluation for Research of Device/Circuit/Architecture** —
+
+* **Monitor integrated** — The functions
+
 Getting Started with PytorX
 ------------------------------
-  
+
 This project aims at building an easy-to-use framework for neural network mapping on crossbar-based accelerator with resistive memory (e.g., ReRAM, MRAM, etc.).
-  
-  
-- [Dependencies](#Dependencies )
-- [Usage](#Usage )
-- [Results](#Results )
-- [Methods](#Methods )
-  
-  
-If you find this project useful to you, please cite [our work](https://arxiv.org/abs/1807.07948 ):
+
+
+- [Dependencies](#Dependencies)
+- [Usage](#Usage)
+- [Results](#Results)
+- [Methods](#Methods)
+
+
+If you find this project useful to you, please cite [our work](https://arxiv.org/abs/1807.07948):
 ```
 @inproceedings{He2019NIA,
   title={Noise Injection Adaption: End-to-End ReRAM Crossbar Non-ideal Effect Adaption for Neural Network Mapping},
@@ -35,35 +46,29 @@ If you find this project useful to you, please cite [our work](https://arxiv.org
   organization={ACM}
 }
 ```
-## Dependencies:
-  
-  
+### Dependencies:
+
 * Python 3.6 (Anaconda)
 * Pytorch 
 * cuDNN 
-  
+
 The installation of pytorch environment could follow the steps in .... :+1:
-  
-## Usage
-  
-  
-```bash
+
+### Usage
+
+```bash {.line-numbers}
 python main.py --
 ```
-  
-## Results
-  
-  
+
+### Results
+
 　Some experimental results are shown here
-  
-## Methods
-  
-  
-## Task list
-  
-- [x] @mentions, #refs, [links]( ), **formatting**, and <del>tags</del> supported
+
+### Methods
+
+### Task list
+- [x] @mentions, #refs, [links](), **formatting**, and <del>tags</del> supported
 - [x] list syntax required (any unordered or ordered list supported)
 - [x] this is a complete item
 - [ ] Evaluation of accelerator characteristics in terms of latency, power, etc.
-  
-  
+
