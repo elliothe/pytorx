@@ -7,7 +7,7 @@ markdown:
 ---
 
 <p align="center">
-  <img src="./imgs/pytorx_logo3.jpeg" alt="Slate: API Documentation Generator" width="350">
+  <img src="./imgs/pytorx_logo3.jpeg" alt="Slate: API Documentation Generator" width="700">
   <br>
   <a href="https://travis-ci.org/lord/slate"><img src="https://travis-ci.org/lord/slate.svg?branch=master" alt="Build Status"></a>
 </p>
