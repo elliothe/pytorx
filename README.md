@@ -1,14 +1,20 @@
+  
+  
 <p align="center">
-  <img src="https://raw.githubusercontent.com/lord/img/master/logo-slate.png" alt="Slate: API Documentation Generator" width="226">
+  <img src="./imgs/pytorx_logo3.jpeg" alt="Slate: API Documentation Generator" width="350">
   <br>
   <a href="https://travis-ci.org/lord/slate"><img src="https://travis-ci.org/lord/slate.svg?branch=master" alt="Build Status"></a>
 </p>
   
-![PyTorch Logo](./imgs/pytorx_logo3.jpeg )
+<p align="center">PytorX helps you evaluate Neural Network performance on Crossbar Accelerator.</p>
+  
+  
+  
   
 --------------------------------------------------------------------------------
   
-This project aims at building an easy-to-use framework for neural network mapping on crossbar-based accelerator with resistive memory.
+This project aims at building an easy-to-use framework for neural network mapping on crossbar-based accelerator with resistive memory (e.g., ReRAM, MRAM, etc.).
+  
   
 - [Dependencies](#Dependencies )
 - [Usage](#Usage )
