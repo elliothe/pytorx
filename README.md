@@ -1,10 +1,10 @@
----
+<!-- ---
 markdown:
   image_dir: /assets
   path: README.md
   ignore_from_front_matter: true
   absolute_image_path: false #是否使用绝对（相对于项目文件夹）图片路径
----
+--- -->
 
 <p align="center">
   <img src="./imgs/pytorx_logo3.jpeg" alt="Slate: API Documentation Generator" width="700">
