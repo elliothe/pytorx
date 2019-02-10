@@ -14,8 +14,14 @@ markdown:
 
 <p align="center">PytorX helps you evaluate Neural Network performance on Crossbar Accelerator.</p>
 
+Features
+--------------------------------------------------------------------------------
 
-<!-- -------------------------------------------------------------------------------- -->
+* **Clean and Easy-to-Ues** —
+
+* **Evaluation for Research of Device/Circuit/Architecture** —
+
+* **Monitor integrated** — The functions
 
 Getting Started with PytorX
 ------------------------------
@@ -40,7 +46,7 @@ If you find this project useful to you, please cite [our work](https://arxiv.org
   organization={ACM}
 }
 ```
-## Dependencies:
+### Dependencies:
 
 * Python 3.6 (Anaconda)
 * Pytorch 
@@ -48,19 +54,19 @@ If you find this project useful to you, please cite [our work](https://arxiv.org
 
 The installation of pytorch environment could follow the steps in .... :+1:
 
-## Usage
+### Usage
 
 ```bash {.line-numbers}
 python main.py --
 ```
 
-## Results
+### Results
 
 　Some experimental results are shown here
 
-## Methods
+### Methods
 
-## Task list
+### Task list
 - [x] @mentions, #refs, [links](), **formatting**, and <del>tags</del> supported
 - [x] list syntax required (any unordered or ordered list supported)
 - [x] this is a complete item
