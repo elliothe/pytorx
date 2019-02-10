@@ -1,6 +1,6 @@
   
   
-![PyTorch Logo](./imgs/pytorx_logo3.jpeg )<!-- .element height="50%" width="50%" -->
+![PyTorch Logo| 20%](./imgs/pytorx_logo3.jpeg )
   
 --------------------------------------------------------------------------------
   
