@@ -1,11 +1,8 @@
   
   
-![PyTorch Logo| 20%](./imgs/pytorx_logo3.jpeg )
+![PyTorch Logo](./imgs/pytorx_logo3.jpeg )
   
 --------------------------------------------------------------------------------
-  
-# PytorX
-  
   
 This project aims at building an easy-to-use framework for neural network mapping on crossbar-based accelerator with resistive memory.
   

@@ -10,8 +10,6 @@ markdown:
 
 --------------------------------------------------------------------------------
 
-# PytorX
-
 This project aims at building an easy-to-use framework for neural network mapping on crossbar-based accelerator with resistive memory.
 
 - [Dependencies](#Dependencies)
