@@ -6,7 +6,7 @@ markdown:
   absolute_image_path: false #是否使用绝对（相对于项目文件夹）图片路径
 ---
 
-![PyTorch Logo](./imgs/pytorx_logo3.jpeg)
+![PyTorch Logo](./imgs/pytorx_logo3.jpeg)<!-- .element height="50%" width="50%" -->
 
 --------------------------------------------------------------------------------
 
