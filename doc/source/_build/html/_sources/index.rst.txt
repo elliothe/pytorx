@@ -11,10 +11,25 @@ PytorX Documentation
 PytorX is a extension library of pytorch for neural network
 mapping on crossbar-based accelerator.
 
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Introduction
+
+    introduction/installation
+    introduction/know_issue
+    introduction/support
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Tutorials
+
+    Tutorials/*
+
 .. toctree::
     :glob:
     :maxdepth: 1
-    :caption: Notes:
+    :caption: Notes
 
     notes/*
 
@@ -23,7 +38,7 @@ mapping on crossbar-based accelerator.
     :maxdepth: 1
     :caption: Package Reference
 
-    pack_ref/*
+    pack_ref/layer
 
 
 
