@@ -24,7 +24,7 @@ mapping on crossbar-based accelerator.
     :maxdepth: 1
     :caption: Tutorials
 
-    Tutorials/*
+    tutorial/MNIST
 
 .. toctree::
     :glob:
