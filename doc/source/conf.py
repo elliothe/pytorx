@@ -50,12 +50,12 @@ release = '0.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'nbsphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-    'sphinx.ext.napoleon',
-    'nbsphinx'
+    'sphinx.ext.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -64,8 +64,8 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md', '.ipython']
+# source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
@@ -82,10 +82,12 @@ language = None
 # This pattern also affects html_static_path and html_extra_path.
 # exclude_patterns = []
 exclude_patterns = ['_build', '**.ipynb_checkpoints']
+# exclude_patterns = ['**.ipynb_checkpoints']
+
 
 # The name of the Pygments (syntax highlighting) style to use.
-# pygments_style = None
-pygments_style = 'sphinx'
+pygments_style = None
+# pygments_style = 'sphinx'
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -202,6 +204,5 @@ def setup(app):
         #'url_resolver': lambda url: github_doc_root + url,
         'auto_toc_tree_section': 'Contents',
         'enable_eval_rst': True,
-        'enable_auto_doc_ref': True,
     }, True)
     app.add_transform(AutoStructify)

@@ -21,11 +21,10 @@ mapping on crossbar-based accelerator.
     introduction/support
 
 .. toctree::
-    :glob:
     :maxdepth: 1
     :caption: Tutorials
 
-    tutorial/*
+    tutorial/MNIST
 
 .. toctree::
     :glob:
