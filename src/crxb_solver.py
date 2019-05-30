@@ -3,7 +3,8 @@ class crxb_solver(object):
     """This class solves IR drop in a crossbar array and calculates the output current w.r.t. wire resistence in the
     crossbar array.
     An example of using the solver is:
-
+    
+    vdd = 3.3
     Gsize = 64 # crxb size
     Gwire = 0.4 # wire conductance
     Gload = 10 # ADC and DAC loading conductance
