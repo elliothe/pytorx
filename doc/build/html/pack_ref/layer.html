@@ -259,40 +259,6 @@
 
 </dd></dl>
 
-<span class="target" id="module-crxb_solver"></span><dl class="class">
-<dt id="crxb_solver.crxb_solver">
-<em class="property">class </em><code class="descclassname">crxb_solver.</code><code class="descname">crxb_solver</code><span class="sig-paren">(</span><em>Rsize</em>, <em>Csize</em>, <em>Gwire</em>, <em>Gload</em>, <em>input_x</em>, <em>Gmat</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/crxb_solver.html#crxb_solver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#crxb_solver.crxb_solver" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>This class solves IR drop in a crossbar array and calculates the output current w.r.t. wire resistence in the
-crossbar array.
-An example of using the solver is:</p>
-<p>vdd = 3.3
-Gsize = 64 # crxb size
-Gwire = 0.4 # wire conductance
-Gload = 10 # ADC and DAC loading conductance
-Gmin = 1/3e5
-Gmax = 1/3e2
-x = torch.rand(Gsize, 1, 1, 1, 1)*vdd # generating input
-Gmat = torch.rand(Gsize, Gsize, 1, 1)*(Gmax-Gmin)+Gmin # generating crxb
-iout_ideal = torch.matmul(Gmat.unsqueeze(4).permute(2, 3, 4, 1, 0), x.permute(2, 3, 4, 0 ,1)) # ideal current output
-crxb = crxb_solver(Rsize=Gsize, Csize=Gsize, Gwire=Gwire, Gload=Gload, input_x=x, Gmat=Gmat)
-crxb.resetcoo()
-output_crxb = crxb.caliout()
-print(((iout_ideal - output_crxb)/iout_ideal*100).abs().max())# the max error%</p>
-<dl class="method">
-<dt id="crxb_solver.crxb_solver.caliout">
-<code class="descname">caliout</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; output current w.r.t. IR drop<a class="reference internal" href="../_modules/crxb_solver.html#crxb_solver.caliout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#crxb_solver.crxb_solver.caliout" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function is to calcuate the output of the current of the corssbar</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="crxb_solver.crxb_solver.resetcoo">
-<code class="descname">resetcoo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/crxb_solver.html#crxb_solver.resetcoo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#crxb_solver.crxb_solver.resetcoo" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function resets the coo matrix for a new calculation</p>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 
 
