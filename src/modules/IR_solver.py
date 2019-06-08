@@ -1,5 +1,5 @@
 import torch
-class crxb_solver(object):
+class IR_solver(object):
 
     """This class solves IR drop in a crossbar array and calculates the output current w.r.t. wire resistence in the
     crossbar array.
