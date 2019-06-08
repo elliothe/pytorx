@@ -13,3 +13,8 @@ pytorx.layer
     :members:
     :undoc-members:
     :show-inheritance:
+
+.. automodule:: crxb_solver
+    :members:
+    :undoc-members:
+    :show-inheritance:
