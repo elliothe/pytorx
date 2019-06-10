@@ -13,7 +13,7 @@ class IR_solver(object):
     x = torch.rand(Gsize, 1, 1, 1, 1)*vdd # generating input
     Gmat = torch.rand(Gsize, Gsize, 1, 1)*(Gmax-Gmin)+Gmin # generating crxb
     iout_ideal = torch.matmul(Gmat.unsqueeze(4).permute(2, 3, 4, 1, 0), x.permute(2, 3, 4, 0 ,1)) # ideal current output
-    crxb = crxb_solver(Rsize=Gsize, Csize=Gsize, Gwire=Gwire, Gload=Gload, input_x=x, Gmat=Gmat)
+    crxb = IR_solver(Rsize=Gsize, Csize=Gsize, Gwire=Gwire, Gload=Gload, input_x=x, Gmat=Gmat)
     crxb.resetcoo()
     output_crxb = crxb.caliout()
     print(((iout_ideal - output_crxb)/iout_ideal*100).abs().max())# the max error%
