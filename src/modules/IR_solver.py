@@ -17,7 +17,6 @@ class IR_solver(object):
     crxb.resetcoo()
     output_crxb = crxb.caliout()
     print(((iout_ideal - output_crxb)/iout_ideal*100).abs().max())# the max error%
-
     """
 
     def __init__(self, Rsize, Csize, Gwire, Gload, input_x, Gmat):
