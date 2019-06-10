@@ -4,7 +4,6 @@ class IR_solver(object):
     """This class solves IR drop in a crossbar array and calculates the output current w.r.t. wire resistence in the
     crossbar array.
     An example of using the solver is:
-    
     vdd = 3.3
     Gsize = 64 # crxb size
     Gwire = 0.4 # wire conductance
@@ -24,6 +23,16 @@ class IR_solver(object):
     def __init__(self, Rsize, Csize, Gwire, Gload, input_x, Gmat):
         """
         Initialize a crxb solver to calculate the iout change due to IR drop
+
+        Args:
+            Rsize (int): the row size of the crossbar
+            Csize (int): the column size of the crossbar
+            Gwire (float): the wire conductance of the crossbar
+            input_x (float): the input voltage of the crossbar
+            Gmat (Tensor.float): the weight matrix of the crossbar
+
+        Returns:
+            None
         """
         self.input_x = input_x
         # input voltages
@@ -52,7 +61,14 @@ class IR_solver(object):
         # we set the value to model the output resistance of the DAC and the input resistance of the TIA
 
     def caliout(self) -> "output current w.r.t. IR drop":
-        """This function is to calcuate the output of the current of the corssbar"""
+        """This function is to calcuate the output of the current of the corssbar
+
+        Args:
+            None
+
+        Retures:
+            output current of the crossbar w.r.t. IR drop
+        """
         # start1 = time.time()
         current_mat = self._nodematgen()
         # Generate the current array I of the MNA, which solve the node voltages using GV = I
@@ -73,13 +89,29 @@ class IR_solver(object):
         return nodes[:, :, temp - self.GCsize:temp, :] * self.Gload
 
     def resetcoo(self):
-        """This function resets the coo matrix for a new calculation"""
+        """This function resets the coo matrix for a new calculation.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         self.mat_col = []
         self.mat_row = []
         self.mat_data = []
 
     def _add_data(self, row_data, col_data, data_data):
-        """This function adds elements to the coo matrix"""
+        """This function adds elements to the coo matrix
+
+        Args:
+            row_data (int): the row coordinate of the coo matrix
+            col_data (int): the column coordinate of the coo matrix
+            data_data (float): the entries of the w.r.t. the row and column coordinate
+
+        Returns:
+            None
+        """
         self.mat_row.append(row_data)
         self.mat_col.append(col_data)
         self.mat_data.append(data_data)
@@ -88,6 +120,13 @@ class IR_solver(object):
         """This function generates the node conductance matrix. The node conductance matrix is batched
         according to dimension of the input tensors. The detailed descrapition of the G matrix please to
         this link: https://lpsa.swarthmore.edu/Systems/Electrical/mna/MNA1.html
+
+        Args:
+            None
+
+        Returns:
+            The conductance matrix in coo format.
+            current_mat (tensor.float): the current matrix.
         """
         current_mat = torch.zeros(self.GRsize ** 2 * 2, self.input_x.shape[1], self.input_x.shape[2],
                                   self.input_x.shape[3], self.input_x.shape[4])
