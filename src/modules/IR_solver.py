@@ -117,7 +117,7 @@ class IR_solver(object):
 
     def _nodematgen(self):
         """This function generates the node conductance matrix. The node conductance matrix is batched
-        according to dimension of the input tensors. The detailed descrapition of the G matrix please to
+        according to dimension of the input tensors. The detailed descrapition of the node conductance matrix please to
         this link: https://lpsa.swarthmore.edu/Systems/Electrical/mna/MNA1.html
 
         Args:
