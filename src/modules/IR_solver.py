@@ -2,7 +2,7 @@ import torch
 
 
 class IrSolver(object):
-    """This class solves  IR drop in a crossbar array and calculates the output current w.r.t. wire resistence in the
+    """This class solves IR drop in a crossbar array and calculates the output current w.r.t. wire resistence in the
     crossbar array.
     An example of using the solver is:
     vdd = 3.3
