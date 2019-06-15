@@ -1,6 +1,7 @@
 import torch
-class IR_solver(object):
 
+
+class IrSolver(object):
     """This class solves IR drop in a crossbar array and calculates the output current w.r.t. wire resistence in the
     crossbar array.
     An example of using the solver is:
@@ -13,7 +14,7 @@ class IR_solver(object):
     x = torch.rand(Gsize, 1, 1, 1, 1)*vdd # generating input
     Gmat = torch.rand(Gsize, Gsize, 1, 1)*(Gmax-Gmin)+Gmin # generating crxb
     iout_ideal = torch.matmul(Gmat.unsqueeze(4).permute(2, 3, 4, 1, 0), x.permute(2, 3, 4, 0 ,1)) # ideal current output
-    crxb = IR_solver(Rsize=Gsize, Csize=Gsize, Gwire=Gwire, Gload=Gload, input_x=x, Gmat=Gmat)
+    crxb = IrSolver(Rsize=Gsize, Csize=Gsize, Gwire=Gwire, Gload=Gload, input_x=x, Gmat=Gmat)
     crxb.resetcoo()
     output_crxb = crxb.caliout()
     print(((iout_ideal - output_crxb)/iout_ideal*100).abs().max())# the max error%
@@ -78,10 +79,10 @@ class IR_solver(object):
         # Generate the node conductace G
 
         nodes, _ = torch.solve(current_mat.permute(2, 3, 0, 1, 4).contiguous().view(current_mat.size()[2],
-                                                                     current_mat.size()[3],
-                                                                     current_mat.size()[0],
-                                                                      -1),
-                              node_sp.to_dense().permute(2, 3, 0, 1))
+                                                                                    current_mat.size()[3],
+                                                                                    current_mat.size()[0],
+                                                                                    -1),
+                               node_sp.to_dense().permute(2, 3, 0, 1))
         # Solve batched linear systems
 
         temp = nodes.shape[2]
