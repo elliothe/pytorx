@@ -2,7 +2,7 @@ import torch
 
 
 class IrSolver(object):
-    """This class solves IR drop in a crossbar array and calculates the output current w.r.t. wire resistence in the
+    """This class solves  IR drop in a crossbar array and calculates the output current w.r.t. wire resistence in the
     crossbar array.
     An example of using the solver is:
     vdd = 3.3
@@ -20,7 +20,7 @@ class IrSolver(object):
     print(((iout_ideal - output_crxb)/iout_ideal*100).abs().max())# the max error%
     """
 
-    def __init__(self, Rsize, Csize, Gwire, Gload, input_x, Gmat):
+    def __init__(self, Rsize, Csize, Gwire, Gload, input_x, Gmat, device="cuda"):
         """
         Initialize a crxb solver to calculate the iout change due to IR drop
 
@@ -60,6 +60,8 @@ class IrSolver(object):
         # load resistance of the crossbar
         # we set the value to model the output resistance of the DAC and the input resistance of the TIA
 
+        self.device = device.type
+
     def caliout(self) -> "output current w.r.t. IR drop":
         """This function is to calcuate the output of the current of the corssbar
 
@@ -70,10 +72,15 @@ class IrSolver(object):
             output current of the crossbar w.r.t. IR drop
         """
         # start1 = time.time()
-        current_mat = self._nodematgen()
+        if self.device == "cpu":
+            current_mat = self._nodematgen()
+        else:
+            current_mat = self._nodematgen().cuda()
         # Generate the current array I of the MNA, which solve the node voltages using GV = I
-
-        node_i = torch.LongTensor([self.mat_row, self.mat_col])
+        if self.device == "cpu":
+            node_i = torch.LongTensor([self.mat_row, self.mat_col])
+        else:
+            node_i = torch.LongTensor([self.mat_row, self.mat_col]).cuda()
         node_v = torch.stack(self.mat_data)
         node_sp = torch.sparse.FloatTensor(node_i, node_v)
         # Generate the node conductace G
@@ -84,9 +91,15 @@ class IrSolver(object):
                                                                                     -1),
                                node_sp.to_dense().permute(2, 3, 0, 1))
         # Solve batched linear systems
-
+        del _
         temp = nodes.shape[2]
-        return nodes[:, :, temp - self.GCsize:temp, :] * self.Gload
+        outcurrent = nodes[:, :, temp - self.GCsize:temp, :]
+        del nodes
+        try:
+            outcurrent = outcurrent * self.Gload
+        except:
+            outcurrent = outcurrent * self.Gload
+        return outcurrent
 
     def resetcoo(self):
         """This function resets the coo matrix for a new calculation.
@@ -114,7 +127,10 @@ class IrSolver(object):
         """
         self.mat_row.append(row_data)
         self.mat_col.append(col_data)
-        self.mat_data.append(data_data)
+        if self.device == "cpu":
+            self.mat_data.append(data_data)
+        else:
+            self.mat_data.append(data_data.cuda())
 
     def _nodematgen(self):
         """This function generates the node conductance matrix. The node conductance matrix is batched
@@ -176,3 +192,4 @@ class IrSolver(object):
                     counter += 1
 
         return current_mat
+
