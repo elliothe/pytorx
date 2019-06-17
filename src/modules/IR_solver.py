@@ -1,4 +1,6 @@
 import torch
+import pandas as pd
+import numpy as np
 
 
 class IrSolver(object):
@@ -13,7 +15,7 @@ class IrSolver(object):
     Gmax = 1/3e2
     x = torch.rand(Gsize, 1, 1, 1, 1)*vdd # generating input
     Gmat = torch.rand(Gsize, Gsize, 1, 1)*(Gmax-Gmin)+Gmin # generating crxb
-    iout_ideal = torch.matmul(Gmat.unsqueeze(4).permute(2, 3, 4, 1, 0), x.permute(2, 3, 4, 0 ,1)) # ideal current output
+    iout_ideal = torch.matmul(Gmat.unsqueeze(4).permute(2, 3, 4, 1, 0), x.permute(2, 3, 4, 0 ,1)).cuda() # ideal current output
     crxb = IrSolver(Rsize=Gsize, Csize=Gsize, Gwire=Gwire, Gload=Gload, input_x=x, Gmat=Gmat)
     crxb.resetcoo()
     output_crxb = crxb.caliout()
@@ -193,3 +195,47 @@ class IrSolver(object):
 
         return current_mat
 
+
+class ErrorLog(object):
+    """This class saves the mean and std of the error of IR drop to
+    a csv file for future retraining.
+
+    """
+
+    def __init__(self, N_crxb_row, N_crxb_col, module_id):
+        '''Initialize a pandas dataframe here to store the generated data
+
+        Args:
+            N_crxb_col (int): column size of the corssbar
+            N_crxb_row (int): row size of the corssbar
+            module_id (int): the id of the current module
+        '''
+        # self.columns = ['input', 'weight', 'output']
+        self.columns = ['mean', 'std']
+        self.df = pd.DataFrame(columns=self.columns)
+        self.file_name = str(N_crxb_row) + 'x' + str(N_crxb_col) + "_" + \
+                         str(module_id) + '_error' + '.csv'
+
+    def append_data(self, mean: object, std: object) -> object:
+        """Add data to the csv file
+
+        Args:
+            mean (tensor): mean of the error
+            std (tensor): std of the data
+        """
+        mean_str = str(mean.flatten().cpu().numpy())
+        mean_len = mean_str.__len__()
+        std_str = str(std.flatten().cpu().numpy())
+        std_len = std_str.__len__()
+
+        data_dict = {'mean': mean_str[1:mean_len - 1],
+                     'std': std_str[1:std_len - 1]}
+        self.df.loc[len(self.df)] = data_dict
+
+    def save_to_csv(self):
+        """save the data to csv file
+
+        Returns:
+            a csv file named as file_name
+        """
+        self.df.to_csv(self.file_name, index=False)
