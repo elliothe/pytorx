@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from IR_solver import IrSolver
+
 
 class crxb_Conv2d(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, 
@@ -94,6 +94,8 @@ class crxb_Conv2d(nn.Conv2d):
         # 2.4. compute matrix multiplication followed by reshapes
 
         if ir_drop:
+            from IR_solver import IrSolver
+
             crxb_pos = IrSolver(Rsize=self.crxb_size,
                                 Csize=self.crxb_size,
                                 Gwire=self.Gwire,
@@ -236,6 +238,7 @@ class crxb_Linear(nn.Linear):
         # 2.4. compute matrix multiplication
 
         if ir_drop:
+            from IR_solver import IrSolver
 
             crxb_pos = IrSolver(Rsize=self.crxb_size,
                                 Csize=self.crxb_size,
