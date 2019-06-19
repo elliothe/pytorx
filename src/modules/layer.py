@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from IR_solver import IrSolver
 
 class crxb_Conv2d(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, 
@@ -91,7 +92,34 @@ class crxb_Conv2d(nn.Conv2d):
         G_crxb = self.w2g(weight_crxb)
         
         # 2.4. compute matrix multiplication followed by reshapes
-        output_crxb = torch.matmul(G_crxb[0], input_crxb) - \
+
+        if ir_drop:
+            crxb_pos = IrSolver(Rsize=self.crxb_size,
+                                Csize=self.crxb_size,
+                                Gwire=self.Gwire,
+                                Gload=self.Gload,
+                                input_x=input_crxb.permute(3, 0, 1, 2, 4),
+                                Gmat=G_crxb[0].permute(3, 2, 0, 1),
+                                device=device)
+            crxb_pos.resetcoo()
+            crxb_neg = IrSolver(Rsize=self.crxb_size,
+                                Csize=self.crxb_size,
+                                Gwire=self.Gwire,
+                                Gload=self.Gload,
+                                input_x=input_crxb.permute(3, 0, 1, 2, 4),
+                                Gmat=G_crxb[1].permute(3, 2, 0, 1),
+                                device=device)
+            crxb_neg.resetcoo()
+
+            output_crxb = (crxb_pos.caliout() - crxb_neg.caliout())
+            output_crxb = output_crxb.contiguous().view(self.crxb_col, self.crxb_row, self.crxb_size,
+                                                        input.shape[0],
+                                                        input_padded.shape[2])
+
+            output_crxb = output_crxb.permute(3, 0, 1, 2, 4)
+
+        else:
+            output_crxb = torch.matmul(G_crxb[0], input_crxb) - \
                       torch.matmul(G_crxb[1], input_crxb)
         
 
@@ -106,7 +134,7 @@ class crxb_Conv2d(nn.Conv2d):
 #         print('adc LSB ration:', self.delta_i/self.max_i_LSB)
         output_clip = F.hardtanh(output_crxb, min_val=-self.h_lvl*self.delta_i.item(),
                                 max_val=self.h_lvl*self.delta_i.item())  
-        output_adc = adc(output_clip, self.delta_i, self.delta_y)
+        09/10 = adc(output_clip, self.delta_i, self.delta_y)
         
         if self.w2g.enable_SAF:
             if self.enable_ec_SAF:
@@ -206,7 +234,37 @@ class crxb_Linear(nn.Linear):
         G_crxb = self.w2g(weight_crxb)
         
         # 2.4. compute matrix multiplication
-        output_crxb = torch.matmul(G_crxb[0], input_crxb) \
+
+        if ir_drop:
+
+            crxb_pos = IrSolver(Rsize=self.crxb_size,
+                                Csize=self.crxb_size,
+                                Gwire=self.Gwire,
+                                Gload=self.Gload,
+                                input_x=input_crxb.permute(3, 0, 1, 2, 4),
+                                Gmat=G_crxb[0].permute(3, 2, 0, 1),
+                                device=device)
+            crxb_pos.resetcoo()
+            crxb_neg = IrSolver(Rsize=self.crxb_size,
+                                Csize=self.crxb_size,
+                                Gwire=self.Gwire,
+                                Gload=self.Gload,
+                                input_x=input_crxb.permute(3, 0, 1, 2, 4),
+                                Gmat=G_crxb[1].permute(3, 2, 0, 1),
+                                device=device)
+            crxb_neg.resetcoo()
+
+            output_crxb = (crxb_pos.caliout() - crxb_neg.caliout())
+            output_crxb = output_crxb.contiguous().view(self.crxb_col,
+                                                        self.crxb_row,
+                                                        self.crxb_size,
+                                                        input.shape[0],
+                                                        1)
+
+            output_crxb = output_crxb.permute(3, 0, 1, 2, 4)
+
+        else:
+            output_crxb = torch.matmul(G_crxb[0], input_crxb) \
                     - torch.matmul(G_crxb[1], input_crxb)
 
         # perform ADC operation (i.e., current to digital conversion)
