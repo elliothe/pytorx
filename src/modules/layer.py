@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.functional as F
 import torch.nn as nn
@@ -137,7 +139,7 @@ class crxb_Conv2d(nn.Conv2d):
 #         print('adc LSB ration:', self.delta_i/self.max_i_LSB)
         output_clip = F.hardtanh(output_crxb, min_val=-self.h_lvl*self.delta_i.item(),
                                 max_val=self.h_lvl*self.delta_i.item())  
-        09/10 = adc(output_clip, self.delta_i, self.delta_y)
+        output_adc = adc(output_clip, self.delta_i, self.delta_y)
         
         if self.w2g.enable_SAF:
             if self.enable_ec_SAF:
