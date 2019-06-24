@@ -49,7 +49,7 @@ If you find this project useful to you, please cite [our work](https://arxiv.org
 ### Dependencies:
 
 * Python 3.6 (Anaconda)
-* Pytorch 
+* Pytorch 1.1 
 * cuDNN 
 
 The installation of pytorch environment could follow the steps in .... :+1:
