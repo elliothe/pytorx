@@ -1,20 +1,20 @@
-from __future__ import division
 from __future__ import absolute_import
+from __future__ import division
 
-import os
-import sys
-import shutil
-import time
-import random
 import argparse
+import os
+import random
+import shutil
+import sys
+import time
+
+# from tensorboardX import SummaryWriter
+import models
 import torch
 import torch.backends.cudnn as cudnn
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 from utils import AverageMeter, RecorderMeter, time_string, convert_secs2time
-from utils_.reorganize_param import reorganize_param
-# from tensorboardX import SummaryWriter
-import models
 
 # import yellowFin tuner
 sys.path.append("./tuner_utils")
@@ -73,6 +73,17 @@ parser.add_argument('--workers', type=int, default=4,
                     help='number of data loading workers (default: 2)')
 # random seed
 parser.add_argument('--manualSeed', type=int, default=5000, help='manual seed')
+
+#crossbar and electrical parameters
+parser.add_argument('--crxb_size', type=int, default=64, help='corssbar size')
+parser.add_argument('--vdd', type=float, default=3.3, help='supply voltage')
+parser.add_argument('--gwire', type=float, default=0.0357, help='wire conductacne')
+parser.add_argument('--gload', type=float, default=0.25, help='load conductance')
+parser.add_argument('--gmax', type=float, default=0.000333, help='maximum cell conductance')
+parser.add_argument('--gmin', type=float, default=0.000000333, help='minimum cell conductance')
+parser.add_argument('--ir_drop', type=bool, default=False, help='switch to turn on ir drop analysis')
+parser.add_argument('--scaler_dw', type=float, default=1, help='scaler to compress the conductance')
+
 
 ##########################################################################
 
