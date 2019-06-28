@@ -77,12 +77,18 @@ parser.add_argument('--manualSeed', type=int, default=5000, help='manual seed')
 #crossbar and electrical parameters
 parser.add_argument('--crxb_size', type=int, default=64, help='corssbar size')
 parser.add_argument('--vdd', type=float, default=3.3, help='supply voltage')
-parser.add_argument('--gwire', type=float, default=0.0357, help='wire conductacne')
-parser.add_argument('--gload', type=float, default=0.25, help='load conductance')
-parser.add_argument('--gmax', type=float, default=0.000333, help='maximum cell conductance')
-parser.add_argument('--gmin', type=float, default=0.000000333, help='minimum cell conductance')
-parser.add_argument('--ir_drop', type=bool, default=False, help='switch to turn on ir drop analysis')
-parser.add_argument('--scaler_dw', type=float, default=1, help='scaler to compress the conductance')
+parser.add_argument('--gwire', type=float, default=0.0357,
+                    help='wire conductacne')
+parser.add_argument('--gload', type=float, default=0.25,
+                    help='load conductance')
+parser.add_argument('--gmax', type=float, default=0.000333,
+                    help='maximum cell conductance')
+parser.add_argument('--gmin', type=float, default=0.000000333,
+                    help='minimum cell conductance')
+parser.add_argument('--ir_drop', type=bool, default=False,
+                    help='switch to turn on ir drop analysis')
+parser.add_argument('--scaler_dw', type=float, default=1,
+                    help='scaler to compress the conductance')
 
 
 ##########################################################################
