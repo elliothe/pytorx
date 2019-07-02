@@ -27,7 +27,7 @@ with open(filename, 'w') as f:
         f.write("v{0} input{0} 0 DC={1}\n".format(i, vin))
         f.write("rin{0} input{0} top{0}p0 ".format(i) + str(1/gloaddac) + "\n")
 
-    # writing rest nodes
+    # writing normal nodes
     for i in range(crxb_size):
         for j in range(crxb_size):
             if i > 0 and j > 0:
