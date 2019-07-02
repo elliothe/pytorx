@@ -1,7 +1,7 @@
 import numpy as np
 '''This script is used to generate the netlist of
 the crossbar that can be used in a spice based simulator.
-rout{i} is the load resistance of the ADC
+rout{i} is the load resistance of the ADC.
 '''
 # parameters
 vdd = 3.3
