@@ -1,6 +1,6 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch
 
 class _quantize_dac(torch.autograd.Function):
 
@@ -19,11 +19,10 @@ class _quantize_dac(torch.autograd.Function):
 # quantization function of DAC module
 quantize_dac = _quantize_dac.apply    
 
-
-class dac_module(nn.Module):
+class DAC(nn.Module):
     
-    def __init__(self, nbits, Vdd=3.3, Vss=0):
-        super(dac_module,self).__init__()
+    def __init__(self, nbits=8, Vdd=3.3, Vss=0):
+        super(DAC,self).__init__()
         r"""
         This Digital-Analog Converter (DAC) module includes two functions:
         1) quantize the floating-point input (FP32) to fixed-point integer;
@@ -52,14 +51,24 @@ class dac_module(nn.Module):
         self.counter = 0
         self.acc = 0 # accumulator 
         
-        self.training = False # flag to determine the operation mode
+        self.training = True # flag to determine the operation mode
     
     def forward(self, input):
+        r'''
+        This function performs the conversion. Note that, output tensor (voltage) is in the
+        same shape as the input tensor (FP32). The input reshape operation is completed by
+        other module.
+        '''
         
         # step 1: quantize the floating-point input (FP32) to fixed-point integer.
-        input_clip = F.hardtanh(input, 
-                                min_val = -self.threshold.item(),
+        # update the threshold before clipping
+        # TODO: change the threshold tuning into KL_div calibration method
+        self.update_threshold(input)
+        input_clip = F.hardtanh(input, min_val = -self.threshold.item(),
                                 max_val = self.threshold.item()) # clip input 
+        
+        self.delta_x = self.threshold.item()/self.half_lvls
+        
         input_quan = quantize_dac(input_clip, self.delta_x)
         
         # step 2: convert to voltage, here the offset (reference voltage) is emitted
@@ -67,17 +76,18 @@ class dac_module(nn.Module):
         
         return output_voltage
     
-    def update_quantizer(self, input):
+    def update_threshold(self, input):
+        # for testing use the run-time maximum
+        self.threshold.data = input.abs().max()
         
-        # quantizer threshold 
-        with torch.no_grad():
-            if self.training:
-                self.counter += 1
-                self.threshold.data = input.abs().max()
-                self.delta_x = self.threshold.item()/self.half_lvls
-                self.acc += self.threshold.data
-            else:
-                # In evaluation mode, fixed the 
-                self.threshold.data[0] = self.acc/self.counter
+#         # quantizer threshold 
+#         with torch.no_grad():
+#             if self.training:
+#                 self.counter += 1
+#                 self.threshold.data = input.abs().max()
+#                 self.acc += self.threshold.data
+#             else:
+#                 # In evaluation mode, fixed the threshold
+#                 self.threshold.data[0] = self.acc/self.counter
                 
-        return 
+#         return 

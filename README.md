@@ -7,7 +7,7 @@ markdown:
 --- -->
 
 <p align="center">
-  <img src="./imgs/pytorx_logo3.jpeg" alt="PytorX: s" width="700">
+  <img src="./imgs/pytorx_logo3.jpeg" alt="PytorX: s" width="850">
   <br>
   <!-- <a href="https://travis-ci.org/lord/slate"><img src="https://travis-ci.org/lord/slate.svg?branch=master" alt="Build Status"></a> -->
 </p>
@@ -57,7 +57,7 @@ Set the environment variable [`PYTHONPATH`](https://docs.python.org/3/using/cmdl
 
 ```bash {.line-numbers}
 export PYTORX_HOME=/path/to/pytorx
-export PYTHONPATH=$PYTORX_HOME/torx${PYTHONPATH}
+export PYTHONPATH=$PYTORX_HOME/python${PYTHONPATH}
 ```
 <!-- 
 ```bash {.line-numbers}
