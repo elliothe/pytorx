@@ -54,7 +54,9 @@ If you find this project useful to you, please cite [our work](https://arxiv.org
 
 The installation of pytorch environment could follow the steps in .... :+1:
 
-### Usage
+### Python package installation
+
+Set the environment variable [`PYTHONPATH`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH) to tell python where to find the library. For example, assume we cloned tvm on the home directory ~. then we can added the following line in ~/.bashrc. 
 
 ```bash {.line-numbers}
 python main.py --
