@@ -9,7 +9,7 @@ markdown:
 <p align="center">
   <img src="./imgs/pytorx_logo3.jpeg" alt="PytorX: s" width="700">
   <br>
-  <a href="https://travis-ci.org/lord/slate"><img src="https://travis-ci.org/lord/slate.svg?branch=master" alt="Build Status"></a>
+  <!-- <a href="https://travis-ci.org/lord/slate"><img src="https://travis-ci.org/lord/slate.svg?branch=master" alt="Build Status"></a> -->
 </p>
 
 <p align="center">PytorX helps you evaluate Neural Network performance on Crossbar Accelerator.</p>
@@ -17,11 +17,10 @@ markdown:
 Features
 --------------------------------------------------------------------------------
 
-* **Clean and Easy-to-Ues** —
+* **Clean and Easy-to-Ues** <!-- — Built on pytorch and GPU enabled -->
+* **Evaluation for Research of Device/Circuit/Architecture** 
 
-* **Evaluation for Research of Device/Circuit/Architecture** —
-
-* **Monitor integrated** — The functions
+<!-- * **Monitor integrated** — The functions -->
 
 Getting Started with PytorX
 ------------------------------
@@ -52,15 +51,13 @@ If you find this project useful to you, please cite [our work](https://arxiv.org
 * Pytorch 1.1 
 * cuDNN 
 
-The installation of pytorch environment could follow the steps in .... :+1:
-
 ### Python package installation
 
 Set the environment variable [`PYTHONPATH`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH) to tell python where to find the library. For example, assume we cloned pytorch repository on the home directory ~. then we can added the following line in ~/.bashrc. 
 
 ```bash {.line-numbers}
 export PYTORX_HOME=/path/to/pytorx
-export PYTHONPATH=$PYTORX/torx${PYTHONPATH}
+export PYTHONPATH=$PYTORX_HOME/torx${PYTHONPATH}
 ```
 <!-- 
 ```bash {.line-numbers}
