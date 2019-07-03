@@ -16,9 +16,6 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 from utils import AverageMeter, RecorderMeter, time_string, convert_secs2time
 
-# import yellowFin tuner
-sys.path.append("./tuner_utils")
-from tuner_utils.yellowfin import YFOptimizer
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
@@ -26,7 +23,7 @@ model_names = sorted(name for name in models.__dict__
 
 ################# Options ##################################################
 ############################################################################
-parser = argparse.ArgumentParser(description='Training network for image classification',
+parser = argparse.ArgumentParser(description='Benchmark for image classification task using CNN and PytorX',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument('--data_path', default='/home/elliot/data/pytorch/svhn/',
@@ -90,16 +87,13 @@ parser.add_argument('--ir_drop', type=bool, default=False,
 parser.add_argument('--scaler_dw', type=float, default=1,
                     help='scaler to compress the conductance')
 
-
 ##########################################################################
 
 args = parser.parse_args()
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 if args.ngpu == 1:
-    # make only device #gpu_id visible, then
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-
 args.use_cuda = args.ngpu > 0 and torch.cuda.is_available()  # check GPU
 
 # Give a random seed if no manual configuration
@@ -112,8 +106,6 @@ if args.use_cuda:
     torch.cuda.manual_seed_all(args.manualSeed)
 
 cudnn.benchmark = True
-
-
 ###############################################################################
 ###############################################################################
 
