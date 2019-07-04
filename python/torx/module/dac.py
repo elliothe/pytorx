@@ -1,3 +1,18 @@
+# Copyright 2019 The PytorX Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -47,8 +62,7 @@ class DAC(nn.Module):
         self.threshold = nn.Parameter(torch.Tensor([1]), requires_grad=False)
         # quantization resolution, need to re-init
         self.delta_x = self.threshold.item()/self.half_lvls
-        self.delta_v = (self.Vdd - self.Vss) / \
-            (self.full_lvls - 1)  # DAC resolution voltage
+        self.delta_v = (self.Vdd - self.Vss) / (self.full_lvls - 1)  # DAC resolution voltage
         self.counter = 0
         self.acc = 0  # accumulator
 
@@ -60,7 +74,7 @@ class DAC(nn.Module):
         same shape as the input tensor (FP32). The input reshape operation is completed by
         other module.
         '''
-
+        
         # step 1: quantize the floating-point input (FP32) to fixed-point integer.
         # update the threshold before clipping
         # TODO: change the threshold tuning into KL_div calibration method
@@ -93,9 +107,11 @@ class DAC(nn.Module):
 
 #         return
 
-####################
+
+
+############################################################
 # Testbenchs
-####################
+############################################################
 
 # doctest
 if __name__ == '__main__':
@@ -126,5 +142,5 @@ def test_output_voltage_range():
     test_input = torch.rand(10)
     assert dac_test(test_input).max() < dac_test.Vdd
     assert dac_test(test_input).min() > dac_test.Vss
-    
+
     return
