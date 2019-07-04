@@ -7,8 +7,11 @@ def square(x):
     4
     """
 
-    return x * x
+    return x * x 
 
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
+
+def test_answer():
+    assert square(2) == 4

@@ -1,6 +1,7 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch
+
 
 class _quantize_dac(torch.autograd.Function):
 
@@ -10,19 +11,21 @@ class _quantize_dac(torch.autograd.Function):
         ctx.delta_x = delta_x
         output = torch.round(input/ctx.delta_x)
         return output
-    
+
     @staticmethod
     def backward(ctx, grad_output):
         grad_input = grad_output.clone()/ctx.delta_x
         return grad_input, None
 
+
 # quantization function of DAC module
-quantize_dac = _quantize_dac.apply    
+quantize_dac = _quantize_dac.apply
+
 
 class DAC(nn.Module):
-    
+
     def __init__(self, nbits=8, Vdd=3.3, Vss=0):
-        super(DAC,self).__init__()
+        super(DAC, self).__init__()
         r"""
         This Digital-Analog Converter (DAC) module includes two functions:
         1) quantize the floating-point input (FP32) to fixed-point integer;
@@ -39,48 +42,51 @@ class DAC(nn.Module):
         self.nbits = nbits
         self.Vdd = Vdd
         self.Vss = Vss
-        
+
         # generate DAC configuration
-        self.full_lvls = 2**self.nbits - 1 # symmetric representation
-        self.half_lvls = (self.full_lvls-1)/2 # number of lvls (>=0 or <=0)
-        
+        self.full_lvls = 2**self.nbits - 1  # symmetric representation
+        self.half_lvls = (self.full_lvls-1)/2  # number of lvls (>=0 or <=0)
+
         # input quantization
-        self.threshold = nn.Parameter(torch.Tensor([1]), requires_grad = False) # quantization threshold, need to re-init
-        self.delta_x = self.threshold.item()/self.half_lvls # quantization resolution, need to re-init 
-        self.delta_v = (self.Vdd - self.Vss)/(self.full_lvls - 1) # DAC resolution voltage 
+        # quantization threshold, need to re-init
+        self.threshold = nn.Parameter(torch.Tensor([1]), requires_grad=False)
+        # quantization resolution, need to re-init
+        self.delta_x = self.threshold.item()/self.half_lvls
+        self.delta_v = (self.Vdd - self.Vss) / \
+            (self.full_lvls - 1)  # DAC resolution voltage
         self.counter = 0
-        self.acc = 0 # accumulator 
-        
-        self.training = True # flag to determine the operation mode
-    
+        self.acc = 0  # accumulator
+
+        self.training = True  # flag to determine the operation mode
+
     def forward(self, input):
         r'''
         This function performs the conversion. Note that, output tensor (voltage) is in the
         same shape as the input tensor (FP32). The input reshape operation is completed by
         other module.
         '''
-        
+
         # step 1: quantize the floating-point input (FP32) to fixed-point integer.
         # update the threshold before clipping
         # TODO: change the threshold tuning into KL_div calibration method
         self.update_threshold(input)
-        input_clip = F.hardtanh(input, min_val = -self.threshold.item(),
-                                max_val = self.threshold.item()) # clip input 
-        
+        input_clip = F.hardtanh(input, min_val=-self.threshold.item(),
+                                max_val=self.threshold.item())  # clip input
+
         self.delta_x = self.threshold.item()/self.half_lvls
-        
+
         input_quan = quantize_dac(input_clip, self.delta_x)
-        
+
         # step 2: convert to voltage, here the offset (reference voltage) is emitted
         output_voltage = input_quan * self.delta_v
-        
+
         return output_voltage
-    
+
     def update_threshold(self, input):
         # for testing use the run-time maximum
         self.threshold.data = input.abs().max()
-        
-#         # quantizer threshold 
+
+#         # quantizer threshold
 #         with torch.no_grad():
 #             if self.training:
 #                 self.counter += 1
@@ -89,5 +95,45 @@ class DAC(nn.Module):
 #             else:
 #                 # In evaluation mode, fixed the threshold
 #                 self.threshold.data[0] = self.acc/self.counter
-                
-#         return 
+
+#         return
+
+
+####################
+# Testbenchs
+####################
+
+# doctest
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+
+# pytest
+
+
+def test_threshold_update():
+    '''
+    check the threshold is updated by the input
+    '''
+    dac_test = DAC()
+    pre_th = dac_test.threshold.item()  # init threshold
+    test_input = torch.rand(10)  # test input
+    dac_test.update_threshold(test_input)
+    post_th = dac_test.threshold.item()
+    # ensure threshold is update by the call of update threshold
+    assert post_th != pre_th
+
+    return
+
+
+def test_output_voltage_range():
+    '''
+    ensure the output voltage of DAC is between the range of 
+    Vdd and Vss.
+    '''
+    dac_test = DAC()
+    test_input = torch.rand(10)
+    assert dac_test(test_input).max() < dac_test.Vdd
+    assert dac_test(test_input).min() > dac_test.Vss
+
+    return
