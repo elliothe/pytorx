@@ -2,9 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class _quantize_dac(torch.autograd.Function):
-
     @staticmethod
     def forward(ctx, input, delta_x):
         # ctx is a context object that can be used to stash information for backward computation
@@ -17,13 +15,10 @@ class _quantize_dac(torch.autograd.Function):
         grad_input = grad_output.clone()/ctx.delta_x
         return grad_input, None
 
-
 # quantization function of DAC module
 quantize_dac = _quantize_dac.apply
 
-
 class DAC(nn.Module):
-
     def __init__(self, nbits=8, Vdd=3.3, Vss=0):
         super(DAC, self).__init__()
         r"""
@@ -98,7 +93,6 @@ class DAC(nn.Module):
 
 #         return
 
-
 ####################
 # Testbenchs
 ####################
@@ -109,8 +103,6 @@ if __name__ == '__main__':
     doctest.testmod()
 
 # pytest
-
-
 def test_threshold_update():
     '''
     check the threshold is updated by the input
@@ -125,7 +117,6 @@ def test_threshold_update():
 
     return
 
-
 def test_output_voltage_range():
     '''
     ensure the output voltage of DAC is between the range of 
@@ -135,5 +126,5 @@ def test_output_voltage_range():
     test_input = torch.rand(10)
     assert dac_test(test_input).max() < dac_test.Vdd
     assert dac_test(test_input).min() > dac_test.Vss
-
+    
     return
