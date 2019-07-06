@@ -18,12 +18,18 @@ import torch.functional as F
 import torch.nn as nn
 
 class SAF(nn.Module):
-    r'''
-    This module performs the Stuck-At-Fault (SAF) non-ideal effect injection.
-    In this module, it i
-    '''
+
     def __init__(self, G_shape, p_SA0=0.1, p_SA1=0.1, G_SA0=1e6, G_SA1=1e3):
         super(SAF, self).__init__()
+        '''
+        This module performs the Stuck-At-Fault (SAF) non-ideal effect injection.
+            Args:
+                G_shape (tensor.size): crossbar array size.
+                p_SA0 (FP): Stuck-at-Fault rate at 0 (range from 0 to 1).
+                p_SA1 (FP): Stuck-at-Fault rate at 1 (range from 0 to 1).
+                G_SA0 (FP): Stuck-at-Fault conductance at 0 (in unit of S).
+                G_SA1 (FP): Stuck-at-Fault conductance at 1 (in unit of S).
+        '''
         # stuck at 0 leads to high conductance 
         self.p_SA0 = nn.Parameter(torch.Tensor([p_SA0]), requires_grad=False) # probability of SA0
         self.G_SA0 = G_SA0
@@ -34,10 +40,17 @@ class SAF(nn.Module):
         assert (self.p_SA0+self.p_SA1)<=1, 'The sum of probability of SA0 and SA1 is greater than 1 !!'
     
         # initialize a random mask
+        # TODO: maybe change the SAF profile to uint8 format to avoid calculating the SAF defect
+        # state on-the-fly, for simulation speedup. However the current setup has higher configurability
+        # to simulate the real-time SAF state if there is run-time change .
         self.p_state = nn.Parameter(torch.Tensor(G_shape), requires_grad = False)
-        self.update_SAF_dist() # init the SAF distribution
+        self.update_SAF_profile() # init the SAF distribution profile
          
     def forward(self, input):
+        '''
+        The forward function alter the elements that indexed by p_state to the defected conductance,
+        and mask the gradient of those defect cells owing to the auto-differentiation. 
+        '''
         output = Inject_SAF(input, self.p_state, self.p_SA0, self.p_SA1, self.G_SA0, self.G_SA1)
         return output
     
@@ -47,8 +60,9 @@ class SAF(nn.Module):
     def index_SA1(self):
         return self.p_state.gt(1-self.p_SA1)
 
-    def update_SAF_dist(self, dist):
-        self.p_state.data.uniform_() #update the SAF distribution.
+    def update_SAF_profile(self, dist='uniform'):
+        if dist == 'uniform': 
+            self.p_state.data.uniform_() #update the SAF distribution.
         return
 
 
@@ -86,3 +100,35 @@ class _SAF(torch.autograd.Function):
         return grad_input, None, None, None, None, None
 
 Inject_SAF = _SAF.apply
+
+
+############################################################
+# Testbenchs
+############################################################
+
+# pytest
+def test_SAF_update_profile():
+    G_shape = torch.Size([16,3,3,3])
+    saf_module = SAF(G_shape)
+    pre_index_SA0 = saf_module.index_SA0()
+    saf_module.update_SAF_profile()
+    post_index_SA0 = saf_module.index_SA0()
+    print((pre_index_SA0-post_index_SA0).sum())
+    assert (pre_index_SA0-post_index_SA0).sum().item() != 0, 'SAF profile is not updated!' 
+    # print(saf_module.index_SA0())
+    return
+
+def test_SA0_SA1_overlap():
+    '''
+    ensure there is no SAF state overlap between SA0 and SA1
+    ''' 
+    G_shape = torch.Size([3,1,3,3])
+    saf_module = SAF(G_shape)
+    index_SA0 = saf_module.index_SA0()
+    index_SA1 = saf_module.index_SA1()
+    assert (index_SA0 * index_SA1).sum().item() == 0, 'exist element is 1 for both SA0/1 index!'
+    return
+
+if __name__ == '__main__':
+    # test_SAF_update_profile()
+    test_SA0_SA1_overlap()
