@@ -17,6 +17,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class _quantize_dac(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input, delta_x):
@@ -30,8 +31,10 @@ class _quantize_dac(torch.autograd.Function):
         grad_input = grad_output.clone()/ctx.delta_x
         return grad_input, None
 
+
 # quantization function of DAC module
 quantize_dac = _quantize_dac.apply
+
 
 class DAC(nn.Module):
     def __init__(self, nbits=8, Vdd=3.3, Vss=0):
@@ -62,7 +65,8 @@ class DAC(nn.Module):
         self.threshold = nn.Parameter(torch.Tensor([1]), requires_grad=False)
         # quantization resolution, need to re-init
         self.delta_x = self.threshold.item()/self.half_lvls
-        self.delta_v = (self.Vdd - self.Vss) / (self.full_lvls - 1)  # DAC resolution voltage
+        self.delta_v = (self.Vdd - self.Vss) / \
+            (self.full_lvls - 1)  # DAC resolution voltage
         self.counter = 0
         self.acc = 0  # accumulator
 
@@ -74,7 +78,7 @@ class DAC(nn.Module):
         same shape as the input tensor (FP32). The input reshape operation is completed by
         other module.
         '''
-        
+
         # step 1: quantize the floating-point input (FP32) to fixed-point integer.
         # update the threshold before clipping
         # TODO: change the threshold tuning into KL_div calibration method
@@ -108,17 +112,15 @@ class DAC(nn.Module):
 #         return
 
 
-
 ############################################################
 # Testbenchs
 ############################################################
-
 # doctest
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
-# pytest
+
 def test_threshold_update():
     '''
     check the threshold is updated by the input
@@ -132,6 +134,7 @@ def test_threshold_update():
     assert post_th != pre_th
 
     return
+
 
 def test_output_voltage_range():
     '''
