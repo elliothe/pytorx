@@ -1,4 +1,3 @@
-import numpy as np
 '''This script is used to generate the netlist of
 the crossbar that can be used in a spice based simulator.
 rout{i} is the load resistance of the ADC.
@@ -13,7 +12,7 @@ gloadadc = 2
 gwire = 1
 crxb_size = 16
 gmat = 0.5
-g = np.random.random((crxb_size, crxb_size))
+# g = np.random.random((crxb_size, crxb_size))
 filename = "crxb.sp"
 with open(filename, 'w') as f:
     # writing descriptions
