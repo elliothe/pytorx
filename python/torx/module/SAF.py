@@ -14,9 +14,8 @@
 # ==============================================================================
 
 import torch
-import torch.functional as F
+import torch.nn.functional as F
 import torch.nn as nn
-
 
 class SAF(nn.Module):
 
@@ -119,7 +118,7 @@ def test_SAF_update_profile():
     pre_index_SA0 = saf_module.index_SA0()
     saf_module.update_SAF_profile()
     post_index_SA0 = saf_module.index_SA0()
-    print((pre_index_SA0-post_index_SA0).sum())
+    # print((pre_index_SA0-post_index_SA0).sum())
     assert (pre_index_SA0 -
             post_index_SA0).sum().item() != 0, 'SAF profile is not updated!'
     # print(saf_module.index_SA0())
@@ -139,5 +138,5 @@ def test_SA0_SA1_overlap():
 
 
 if __name__ == '__main__':
-    # test_SAF_update_profile()
+    test_SAF_update_profile()
     test_SA0_SA1_overlap()

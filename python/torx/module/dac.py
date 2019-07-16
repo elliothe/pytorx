@@ -37,7 +37,7 @@ quantize_dac = _quantize_dac.apply
 
 
 class DAC(nn.Module):
-    def __init__(self, nbits=8, Vdd=3.3, Vss=0):
+    def __init__(self, nbits=8, Vdd=3.3, Vss=0, quan_method='dynamic'):
         super(DAC, self).__init__()
         r"""
         This Digital-Analog Converter (DAC) module includes two functions:
@@ -55,6 +55,7 @@ class DAC(nn.Module):
         self.nbits = nbits
         self.Vdd = Vdd
         self.Vss = Vss
+        self.quan_method = quan_method
 
         # generate DAC configuration
         self.full_lvls = 2**self.nbits - 1  # symmetric representation
@@ -90,27 +91,27 @@ class DAC(nn.Module):
 
         input_quan = quantize_dac(input_clip, self.delta_x)
 
-        # step 2: convert to voltage, here the offset (reference voltage) is emitted
+        # step 2: convert to voltage, here the offset (reference) voltage term is emitted
         output_voltage = input_quan * self.delta_v
 
         return output_voltage
 
     def update_threshold(self, input):
         # for testing use the run-time maximum
-        self.threshold.data = input.abs().max()
+        if 'dynamic' in self.quan_method:
+            self.threshold.data = input.abs().max()
+        else:
+        # quantizer threshold
+            with torch.no_grad():
+                if self.training:
+                    self.counter += 1
+                    self.threshold.data = input.abs().max()
+                    self.acc += self.threshold.data
+                else:
+                    # In evaluation mode, fixed the threshold
+                    self.threshold.data[0] = self.acc/self.counter
 
-#         # quantizer threshold
-#         with torch.no_grad():
-#             if self.training:
-#                 self.counter += 1
-#                 self.threshold.data = input.abs().max()
-#                 self.acc += self.threshold.data
-#             else:
-#                 # In evaluation mode, fixed the threshold
-#                 self.threshold.data[0] = self.acc/self.counter
-
-#         return
-
+        return
 
 ############################################################
 # Testbenchs

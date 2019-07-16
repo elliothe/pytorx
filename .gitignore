@@ -4,3 +4,6 @@ data
 # Visual Studio Code files
 .vscode
 .vs
+
+# ignore compiled python
+.pyc
