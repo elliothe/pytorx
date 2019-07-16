@@ -17,6 +17,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 
+
 class SAF(nn.Module):
 
     def __init__(self, G_shape, p_SA0=0.1, p_SA1=0.1, G_SA0=1e6, G_SA1=1e3):
@@ -137,6 +138,6 @@ def test_SA0_SA1_overlap():
     return
 
 
-if __name__ == '__main__':
-    test_SAF_update_profile()
-    test_SA0_SA1_overlap()
+# if __name__ == '__main__':
+#     test_SAF_update_profile()
+#     test_SA0_SA1_overlap()

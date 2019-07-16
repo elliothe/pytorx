@@ -19,6 +19,7 @@ import torch.nn.functional as F
 
 
 class _quantize_dac(torch.autograd.Function):
+
     @staticmethod
     def forward(ctx, input, delta_x):
         # ctx is a context object that can be used to stash information for backward computation
@@ -37,6 +38,7 @@ quantize_dac = _quantize_dac.apply
 
 
 class DAC(nn.Module):
+
     def __init__(self, nbits=8, Vdd=3.3, Vss=0, quan_method='dynamic'):
         super(DAC, self).__init__()
         r"""
@@ -51,6 +53,8 @@ class DAC(nn.Module):
             nbits (int): number of bits (resolution) of DAC.
             Vdd (fp): Vdd voltage (* in unit of volt).
             Vss (fp): Vss voltage (* in unit of volt).
+            quan_method (str): describe the quantization method, default method is
+                               mainly used for functionality test.
         """
         self.nbits = nbits
         self.Vdd = Vdd
@@ -101,7 +105,7 @@ class DAC(nn.Module):
         if 'dynamic' in self.quan_method:
             self.threshold.data = input.abs().max()
         else:
-        # quantizer threshold
+            # quantizer threshold
             with torch.no_grad():
                 if self.training:
                     self.counter += 1
@@ -112,6 +116,7 @@ class DAC(nn.Module):
                     self.threshold.data[0] = self.acc/self.counter
 
         return
+
 
 ############################################################
 # Testbenchs

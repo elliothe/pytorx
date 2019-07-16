@@ -13,6 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 
-from dac import *
-from saf import *
+from . import dac
+from . import saf
 
