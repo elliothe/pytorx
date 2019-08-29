@@ -23,7 +23,7 @@ description = 'pytorx helps to evaluate the neural network accleration on crossb
 ######################################
 # import the most common subpackages
 ######################################
-import torx.module
+#import torx.module
 
 # from . import test_pp
 # from . import write_sp

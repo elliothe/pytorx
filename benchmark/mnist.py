@@ -26,7 +26,6 @@ class Net(nn.Module):
                                gmax=gmax, gmin=gmin, vdd=vdd, ir_drop=ir_drop, device=device)
         self.fc2 = crxb_Linear(50, 10, crxb_size=crxb_size, scaler_dw=scaler_dw,
                                gmax=gmax, gmin=gmin, vdd=vdd, ir_drop=ir_drop, device=device)
-
         #   self.fc1 = nn.Linear(320, 50)
         #   self.fc2 = nn.Linear(50, 10)
 

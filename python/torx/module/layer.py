@@ -1,8 +1,8 @@
 import math
 
 import torch
-import torch.functional as F
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .adc import _adc
 from .dac import _quantize_dac
