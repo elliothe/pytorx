@@ -69,9 +69,8 @@ class DAC(nn.Module):
         # quantization threshold, need to re-init
         self.threshold = nn.Parameter(torch.Tensor([1]), requires_grad=False)
         # quantization resolution, need to re-init
-        self.delta_x = self.threshold.item()/self.half_lvls
-        self.delta_v = (self.Vdd - self.Vss) / \
-            (self.full_lvls - 1)  # DAC resolution voltage
+        self.delta_x = self.threshold.item() / self.half_lvls
+        self.delta_v = (self.Vdd - self.Vss) / (self.full_lvls - 1)  # DAC resolution voltage
         self.counter = 0
         self.acc = 0  # accumulator
 

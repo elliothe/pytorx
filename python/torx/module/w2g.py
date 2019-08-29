@@ -13,11 +13,11 @@
 # limitations under the License.
 # ==============================================================================
 
-import torch as
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .saf import SAF
+from .SAF import SAF
 
 
 class w2g(nn.Module):

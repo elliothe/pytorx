@@ -4,22 +4,32 @@ import torch
 import torch.functional as F
 import torch.nn as nn
 
+from .adc import _adc
+from .dac import _quantize_dac
+from .w2g import w2g
+
+quantize_input = _quantize_dac.apply
+quantize_weight = _quantize_dac.apply
+adc = _adc.apply
+
 
 class crxb_Conv2d(nn.Conv2d):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True, crxb_size=64,
+    def __init__(self, in_channels, out_channels, kernel_size, ir_drop, device, gmax, gmin, scaler_dw=1,
+                 vdd=3.3, stride=1, padding=0, dilation=1, groups=1, bias=True, crxb_size=64,
                  quantize=8, enable_ec_SAF=False):
         super(crxb_Conv2d, self).__init__(in_channels, out_channels, kernel_size,
                                           stride, padding, dilation, groups, bias)
 
         assert self.groups == 1, "currently not support grouped convolution for custom conv"
 
+        self.ir_drop = ir_drop
+        self.device = device
+
         ################## Crossbar conversion #############################
         self.crxb_size = crxb_size
         self.enable_ec_SAF = enable_ec_SAF
 
-        self.nchout_index = nn.Parameter(torch.arange(
-            self.out_channels), requires_grad=False)
+        self.nchout_index = nn.Parameter(torch.arange(self.out_channels), requires_grad=False)
         weight_flatten = self.weight.view(self.out_channels, -1)
         self.crxb_row, self.crxb_row_pads = self.num_pad(
             weight_flatten.shape[1], self.crxb_size)
@@ -36,22 +46,22 @@ class crxb_Conv2d(nn.Conv2d):
 
         ################# Hardware conversion ##############################
         # weight and input levels
-        self.n_lvl = 2**8
+        self.n_lvl = 2**quantize
         self.h_lvl = (self.n_lvl-2)/2
         # ReRAM cells
-        self.Gmax = 1/3000  # max conductance
-        self.Gmin = 1/3e6  # min conductance
+        self.Gmax = gmax  # max conductance
+        self.Gmin = gmin  # min conductance
         self.delta_g = (self.Gmax-self.Gmin)/(2**7)  # conductance step
         self.w2g = w2g(self.delta_g, Gmin=self.Gmin, G_SA0=self.Gmax,
                        G_SA1=self.Gmin, weight_shape=weight_crxb.shape)
 
         # DAC
-        self.Vdd = 3.3  # unit: volt
+        self.Vdd = vdd  # unit: volt
         self.delta_v = self.Vdd/(self.n_lvl-1)
         self.delta_in_sum = nn.Parameter(torch.Tensor(1), requires_grad=False)
         self.delta_out_sum = nn.Parameter(torch.Tensor(1), requires_grad=False)
         self.counter = nn.Parameter(torch.Tensor(1), requires_grad=False)
-
+        self.scaler_dw = scaler_dw
 #         self.max_i_LSB = ((self.Vdd/2)*self.Gmax*self.crxb_size)/self.h_lvl
 
     def num_pad(self, source, target):
@@ -62,10 +72,10 @@ class crxb_Conv2d(nn.Conv2d):
     def forward(self, input):
         # 1. input data and weight quantization
         with torch.no_grad():
-            self.delta_w = self.weight.abs().max()/self.h_lvl
+            self.delta_w = self.weight.abs().max() / self.h_lvl * self.scaler_dw
             if self.training:
                 self.counter.data += 1
-                self.delta_x = input.abs().max()/self.h_lvl
+                self.delta_x = input.abs().max() / self.h_lvl
                 self.delta_in_sum.data += self.delta_x
             else:
                 self.delta_x = self.delta_in_sum.data/self.counter.data
@@ -105,8 +115,8 @@ class crxb_Conv2d(nn.Conv2d):
 
         # 2.4. compute matrix multiplication followed by reshapes
 
-        if ir_drop:
-            from IR_solver import IrSolver
+        if self.ir_drop:
+            from .IR_solver import IrSolver
 
             crxb_pos = IrSolver(Rsize=self.crxb_size,
                                 Csize=self.crxb_size,
@@ -114,7 +124,7 @@ class crxb_Conv2d(nn.Conv2d):
                                 Gload=self.Gload,
                                 input_x=input_crxb.permute(3, 0, 1, 2, 4),
                                 Gmat=G_crxb[0].permute(3, 2, 0, 1),
-                                device=device)
+                                device=self.device)
             crxb_pos.resetcoo()
             crxb_neg = IrSolver(Rsize=self.crxb_size,
                                 Csize=self.crxb_size,
@@ -122,7 +132,7 @@ class crxb_Conv2d(nn.Conv2d):
                                 Gload=self.Gload,
                                 input_x=input_crxb.permute(3, 0, 1, 2, 4),
                                 Gmat=G_crxb[1].permute(3, 2, 0, 1),
-                                device=device)
+                                device=self.device)
             crxb_neg.resetcoo()
 
             output_crxb = (crxb_pos.caliout() - crxb_neg.caliout())
@@ -175,10 +185,12 @@ class crxb_Conv2d(nn.Conv2d):
 
 
 class crxb_Linear(nn.Linear):
-    def __init__(self, in_features, out_features, bias=True, crxb_size=64,
-                 quantize=8, enable_ec_SAF=False):
+    def __init__(self, in_features, out_features, ir_drop, device, gmax, gmin, vdd=3.3,
+                 scaler_dw=1, bias=True, crxb_size=64, quantize=8, enable_ec_SAF=False, ):
         super(crxb_Linear, self).__init__(in_features, out_features, bias)
 
+        self.ir_drop = ir_drop
+        self.device = device
         ################## Crossbar conversion #############################
         self.crxb_size = crxb_size
         self.enable_ec_SAF = enable_ec_SAF
@@ -198,17 +210,18 @@ class crxb_Linear(nn.Linear):
 
         ################# Hardware conversion ##############################
         # weight and input levels
-        self.n_lvl = 2**8
+        self.n_lvl = 2**quantize
         self.h_lvl = (self.n_lvl-2)/2
         # ReRAM cells
-        self.Gmax = 1/3000  # max conductance
-        self.Gmin = 1/3e6  # min conductance
+        self.Gmax = gmax  # max conductance
+        self.Gmin = gmin  # min conductance
         self.delta_g = (self.Gmax-self.Gmin)/(2**7)  # conductance step
         self.w2g = w2g(self.delta_g, Gmin=self.Gmin, G_SA0=self.Gmax,
                        G_SA1=self.Gmin, weight_shape=weight_crxb.shape)
 
         # DAC
-        self.Vdd = 3.3  # unit: volt
+        self.scaler_dw = scaler_dw
+        self.Vdd = vdd  # unit: volt
         self.delta_v = self.Vdd/(self.n_lvl-1)
         self.delta_in_sum = nn.Parameter(torch.Tensor(1), requires_grad=False)
         self.delta_out_sum = nn.Parameter(torch.Tensor(1), requires_grad=False)
@@ -224,7 +237,7 @@ class crxb_Linear(nn.Linear):
     def forward(self, input):
         # 1. input data and weight quantization
         with torch.no_grad():
-            self.delta_w = self.weight.abs().max()/self.h_lvl
+            self.delta_w = self.weight.abs().max()/self.h_lvl * self.scaler_dw
             if self.training:
                 self.counter.data += 1
                 self.delta_x = input.abs().max()/self.h_lvl
@@ -256,8 +269,8 @@ class crxb_Linear(nn.Linear):
 
         # 2.4. compute matrix multiplication
 
-        if ir_drop:
-            from IR_solver import IrSolver
+        if self.ir_drop:
+            from .IR_solver import IrSolver
 
             crxb_pos = IrSolver(Rsize=self.crxb_size,
                                 Csize=self.crxb_size,
@@ -265,7 +278,7 @@ class crxb_Linear(nn.Linear):
                                 Gload=self.Gload,
                                 input_x=input_crxb.permute(3, 0, 1, 2, 4),
                                 Gmat=G_crxb[0].permute(3, 2, 0, 1),
-                                device=device)
+                                device=self.device)
             crxb_pos.resetcoo()
             crxb_neg = IrSolver(Rsize=self.crxb_size,
                                 Csize=self.crxb_size,
@@ -273,7 +286,7 @@ class crxb_Linear(nn.Linear):
                                 Gload=self.Gload,
                                 input_x=input_crxb.permute(3, 0, 1, 2, 4),
                                 Gmat=G_crxb[1].permute(3, 2, 0, 1),
-                                device=device)
+                                device=self.device)
             crxb_neg.resetcoo()
 
             output_crxb = (crxb_pos.caliout() - crxb_neg.caliout())
