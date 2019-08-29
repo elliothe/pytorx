@@ -2,8 +2,9 @@
 data
 
 # Visual Studio Code files
-.vscode
-.vs
+*.vs
+.vscode/
 
 # ignore compiled python
-.pyc
+*.pyc
+.pytest_cache/

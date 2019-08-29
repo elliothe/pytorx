@@ -12,21 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import math
+import numpy as np
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-import numpy as np
 
 from saf import SAF
 from w2g import w2g
 
-class crossbar_Conv2d(nn.Module):
 
-    def __init__(self, weight, dilation, padding, stride,
-                 nbits=7, Gmax=1/3e3, Gmin=1/3e6, crxb_size=32,
-                 enable_SAF = False):
+class crossbar_Conv2d(nn.Module):
+    def __init__(self,
+                 weight,
+                 dilation,
+                 padding,
+                 stride,
+                 nbits=7,
+                 Gmax=1 / 3e3,
+                 Gmin=1 / 3e6,
+                 crxb_size=32,
+                 enable_SAF=False):
         super(crossbar_Conv2d, self).__init__()
         r"""
         This module consists the function:
@@ -54,28 +61,35 @@ class crossbar_Conv2d(nn.Module):
         self.Gmin = Gmin
         self.crxb_size = crxb_size
         self.half_lvl = 2**self.nbits - 1  # number of lvls determined by ReRAM cell
-        self.delta_g = (self.Gmax - self.Gmin)/self.half_lvl
+        self.delta_g = (self.Gmax - self.Gmin) / self.half_lvl
 
         # configurations for proper reshape, add padding to fit
         weight_row_length = np.prod(self.weight_size[1:])
-        self.crxb_row, self.crxb_row_pads = self.num_pad(weight_row_length,
-                                                         self.crxb_size)
+        self.crxb_row, self.crxb_row_pads = self.num_pad(
+            weight_row_length, self.crxb_size)
         weight_col_length = self.weight_size[0]
-        self.crxb_col, self.crxb_col_pads = self.num_pad(weight_col_length,
-                                                         self.crxb_size)
+        self.crxb_col, self.crxb_col_pads = self.num_pad(
+            weight_col_length, self.crxb_size)
 
         self.w_pad = (0, self.crxb_row_pads, 0, self.crxb_col_pads)
         self.input_pad = (0, 0, 0, self.crxb_row_pads)
 
         # compute the crossbar shape then define the weight-2-conductance module
         weight_flatten = weight.view(self.weight_size[0], -1)
-        weight_padded = F.pad(weight_flatten, self.w_pad, mode='constant', value=0)
+        weight_padded = F.pad(weight_flatten,
+                              self.w_pad,
+                              mode='constant',
+                              value=0)
         weight_crxb = weight_padded.view(self.crxb_col, self.crxb_size,
-                                         self.crxb_row, self.crxb_size).transpose(1, 2)
+                                         self.crxb_row,
+                                         self.crxb_size).transpose(1, 2)
 
         # additional module to perform the conversion between fp32 weight to conductance
-        self.w2g = w2g(self.delta_g, Gmin=self.Gmin, G_SA0=self.Gmax,
-                       G_SA1=self.Gmin, weight_shape=weight_crxb.shape)
+        self.w2g = w2g(self.delta_g,
+                       Gmin=self.Gmin,
+                       G_SA0=self.Gmax,
+                       G_SA1=self.Gmin,
+                       weight_shape=weight_crxb.shape)
 
     def forward(self, input, weight):
         r'''
@@ -87,29 +101,36 @@ class crossbar_Conv2d(nn.Module):
 
         '''
         # 1. unfold the input
-        input_unfold = F.unfold(input, kernel_size=self.weight_size[3],
-                                dilation=self.dilation, padding=self.padding,
+        input_unfold = F.unfold(input,
+                                kernel_size=self.weight_size[3],
+                                dilation=self.dilation,
+                                padding=self.padding,
                                 stride=self.stride)
 
         # quantize and flatten the weight
         with torch.no_grad():
-            self.delta_w = weight.abs().max()/self.half_lvl
+            self.delta_w = weight.abs().max() / self.half_lvl
 
         weight_quan = quantize_weight(weight, self.delta_w)
         # self.weight_size[0] is number of output channels
         weight_flatten = weight_quan.view(self.weight_size[0], -1)
 
         # 2. add paddings
-        input_padded = F.pad(input_unfold, self.input_pad,
-                             mode='constant', value=0)
-        weight_padded = F.pad(weight_flatten, self.w_pad,
-                              mode='constant', value=0)
+        input_padded = F.pad(input_unfold,
+                             self.input_pad,
+                             mode='constant',
+                             value=0)
+        weight_padded = F.pad(weight_flatten,
+                              self.w_pad,
+                              mode='constant',
+                              value=0)
 
         # 3. reshape both input and weight tensor w.r.t crxb size
         input_crxb = input_padded.view(input.shape[0], 1, self.crxb_row,
                                        self.crxb_size, input_padded.shape[2])
         weight_crxb = weight_padded.view(self.crxb_col, self.crxb_size,
-                                         self.crxb_row, self.crxb_size).transpose(1, 2)
+                                         self.crxb_row,
+                                         self.crxb_size).transpose(1, 2)
 
         # convert the floating point weight into conductance pair values
         # G_crxb[0] and G_crxb[1] are postive and negative arrays respectively
@@ -122,7 +143,7 @@ class crossbar_Conv2d(nn.Module):
         return output
 
     def num_pad(self, source, target):
-        crxb_index = math.ceil(source/target)
+        crxb_index = math.ceil(source / target)
         num_padding = crxb_index * target - source
         return crxb_index, num_padding
 
@@ -134,32 +155,18 @@ class _quantize_weight(torch.autograd.Function):
     clippling threshold is the maximum of the weight, which is supposed to be 
     done in calculate the quantization step (delta_w).
     '''
+
     @staticmethod
     def forward(ctx, input, delta_w):
         ctx.delta_w = delta_w
-        output = torch.round(input/delta_w)
+        output = torch.round(input / delta_w)
         return output
 
     @staticmethod
     def backward(ctx, grad_output):
-        grad_input = grad_output.clone()/ctx.delta_w
+        grad_input = grad_output.clone() / ctx.delta_w
         return grad_input, None
+
 
 quantize_weight = _quantize_weight.apply
 
-
-############################################################
-# Testbenchs
-############################################################
-
-def test_crossbar_dimension_usage():
-    weight = torch.rand(3, 1, 3, 3)
-    test_crxb = crossbar_Conv2d(weight, dilation=1, padding=1, stride=1)
-    print(test_crxb.w2g(weight))
-    # print(test_crxb.delta_g)
-
-
-
-if __name__ == '__main__':
-    # test_SAF_update_profile()
-    test_crossbar_dimension_usage()

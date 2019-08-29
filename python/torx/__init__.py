@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-name = 'torx'
+NAME = 'torx'
 __version__ = '0.1'
-description = 'pytorx helps to evaluate the neural network accleration on crossbar'
+DESCRIPTION = 'pytorx helps to evaluate the neural network accleration on crossbar'
 
 # from __future__ import absolute_import
 # from __future__ import division
@@ -23,7 +23,7 @@ description = 'pytorx helps to evaluate the neural network accleration on crossb
 ######################################
 # import the most common subpackages
 ######################################
-import torx.module
+from .module import *
 
 # from . import test_pp
 # from . import write_sp

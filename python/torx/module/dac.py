@@ -15,29 +15,32 @@
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torch.nn import functional as F
 
 
-class _quantize_dac(torch.autograd.Function):
+class QuantizeDac(torch.autograd.Function):
+    r'''customized quantization function of DAC for scaled gradient.
+    Here the gradient is scaled to be consistent with the forward path'''
 
     @staticmethod
     def forward(ctx, input, delta_x):
         # ctx is a context object that can be used to stash information for backward computation
         ctx.delta_x = delta_x
-        output = torch.round(input/ctx.delta_x)
+        output = torch.round(input / ctx.delta_x)
         return output
 
     @staticmethod
     def backward(ctx, grad_output):
-        grad_input = grad_output.clone()/ctx.delta_x
+        grad_input = grad_output.clone() / ctx.delta_x
         return grad_input, None
 
 
 # quantization function of DAC module
-quantize_dac = _quantize_dac.apply
+QUANTIZE_DAC = QuantizeDac.apply
 
 
 class DAC(nn.Module):
+    '''Digital-Analog Converter (DAC) module'''
 
     def __init__(self, nbits=8, Vdd=3.3, Vss=0, quan_method='dynamic'):
         super(DAC, self).__init__()
@@ -45,32 +48,32 @@ class DAC(nn.Module):
         This Digital-Analog Converter (DAC) module includes two functions:
         1) quantize the floating-point input (FP32) to fixed-point integer;
         2) the fixed-point integer will be converted into voltages.
-        After two functions performed, it will feed the voltage output to crossbar array, and reserve all the 
-        other information (e.g., voltages). Note that, as discussed in our paper, the offset voltage where
-        Vref = Vdd/2 is emitted due to the computation equivalency.
+        After two functions performed, it will feed the voltage output to crossbar array, and 
+        reserve all the other information (e.g., voltages). Note that, as discussed in our paper,
+        the offset voltage where Vref = Vdd/2 is emitted due to the computation equivalency.
 
         Args:
             nbits (int): number of bits (resolution) of DAC.
             Vdd (fp): Vdd voltage (* in unit of volt).
             Vss (fp): Vss voltage (* in unit of volt).
-            quan_method (str): describe the quantization method, default method is
-                               mainly used for functionality test.
+            quan_method (str): quantization method, currently use the 'dynamic' method
+                for ensure the correctness of the code
         """
         self.nbits = nbits
-        self.Vdd = Vdd
-        self.Vss = Vss
+        self.vdd = Vdd
+        self.vss = Vss
         self.quan_method = quan_method
 
-        # generate DAC configuration
+        # DAC configuration
         self.full_lvls = 2**self.nbits - 1  # symmetric representation
-        self.half_lvls = (self.full_lvls-1)/2  # number of lvls (>=0 or <=0)
+        self.half_lvls = (self.full_lvls - 1) / 2  # number of lvls
 
         # input quantization
-        # quantization threshold, need to re-init
+        # quantization threshold, which will be reinitialized
         self.threshold = nn.Parameter(torch.Tensor([1]), requires_grad=False)
-        # quantization resolution, need to re-init
-        self.delta_x = self.threshold.item()/self.half_lvls
-        self.delta_v = (self.Vdd - self.Vss) / \
+        # quantization resolution, which will be reinitialized
+        self.delta_x = self.threshold.item() / self.half_lvls
+        self.delta_v = (self.vdd - self.vss) / \
             (self.full_lvls - 1)  # DAC resolution voltage
         self.counter = 0
         self.acc = 0  # accumulator
@@ -88,20 +91,24 @@ class DAC(nn.Module):
         # update the threshold before clipping
         # TODO: change the threshold tuning into KL_div calibration method
         self.update_threshold(input)
-        input_clip = F.hardtanh(input, min_val=-self.threshold.item(),
+        input_clip = F.hardtanh(input,
+                                min_val=-self.threshold.item(),
                                 max_val=self.threshold.item())  # clip input
 
-        self.delta_x = self.threshold.item()/self.half_lvls
+        self.delta_x = self.threshold.item() / self.half_lvls
 
-        input_quan = quantize_dac(input_clip, self.delta_x)
+        input_quan = QUANTIZE_DAC(input_clip, self.delta_x)
 
-        # step 2: convert to voltage, here the offset (reference) voltage term is emitted
+        # step 2: convert to voltage, here the offset (reference) voltage
+        #  is emitted for simplicity.
         output_voltage = input_quan * self.delta_v
 
         return output_voltage
 
     def update_threshold(self, input):
-        # for testing use the run-time maximum
+        r'''update the clipping threshold, which is equivalent to
+        update the DAC quantizer'''
+
         if 'dynamic' in self.quan_method:
             self.threshold.data = input.abs().max()
         else:
@@ -113,43 +120,5 @@ class DAC(nn.Module):
                     self.acc += self.threshold.data
                 else:
                     # In evaluation mode, fixed the threshold
-                    self.threshold.data[0] = self.acc/self.counter
+                    self.threshold.data[0] = self.acc / self.counter
 
-        return
-
-
-############################################################
-# Testbenchs
-############################################################
-# doctest
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
-
-
-def test_threshold_update():
-    '''
-    check the threshold is updated by the input
-    '''
-    dac_test = DAC()
-    pre_th = dac_test.threshold.item()  # init threshold
-    test_input = torch.rand(10)  # test input
-    dac_test.update_threshold(test_input)
-    post_th = dac_test.threshold.item()
-    # ensure threshold is update by the call of update threshold
-    assert post_th != pre_th
-
-    return
-
-
-def test_output_voltage_range():
-    '''
-    ensure the output voltage of DAC is between the range of 
-    Vdd and Vss.
-    '''
-    dac_test = DAC()
-    test_input = torch.rand(10)
-    assert dac_test(test_input).max() < dac_test.Vdd
-    assert dac_test(test_input).min() > dac_test.Vss
-
-    return
