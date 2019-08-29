@@ -1,31 +1,46 @@
 from __future__ import print_function
+
 import argparse
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 
+from python.torx.module.layer import crxb_Conv2d
+from python.torx.module.layer import crxb_Linear
 
 
 class Net(nn.Module):
-    def __init__(self):
+    def __init__(self, crxb_size, gmin, gmax, vdd, ir_drop, device, scaler_dw):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 20, 5, 1)
-        self.conv2 = nn.Conv2d(20, 50, 5, 1)
-        self.fc1 = nn.Linear(4*4*50, 500)
-        self.fc2 = nn.Linear(500, 10)
+        #   self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
+        #   self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
+        self.conv1 = crxb_Conv2d(1, 10, kernel_size=5, crxb_size=crxb_size, scaler_dw=scaler_dw,
+                                 gmax=gmax, gmin=gmin, vdd=vdd, ir_drop=ir_drop, device=device)
+        self.conv2 = crxb_Conv2d(10, 20, kernel_size=5, crxb_size=crxb_size,
+                                 gmax=gmax, gmin=gmin, vdd=vdd, ir_drop=ir_drop, device=device)
+        self.conv2_drop = nn.Dropout2d()
+        self.fc1 = crxb_Linear(320, 50, crxb_size=crxb_size, scaler_dw=scaler_dw,
+                               gmax=gmax, gmin=gmin, vdd=vdd, ir_drop=ir_drop, device=device)
+        self.fc2 = crxb_Linear(50, 10, crxb_size=crxb_size, scaler_dw=scaler_dw,
+                               gmax=gmax, gmin=gmin, vdd=vdd, ir_drop=ir_drop, device=device)
+
+        #   self.fc1 = nn.Linear(320, 50)
+        #   self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, 2, 2)
-        x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, 2, 2)
-        x = x.view(-1, 4*4*50)
+        x = F.relu(F.max_pool2d(self.conv1(x), 2))
+        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
+        x = x.view(-1, 320)
         x = F.relu(self.fc1(x))
+        x = F.dropout(x, training=self.training)
         x = self.fc2(x)
+
         return F.log_softmax(x, dim=1)
-    
+
+
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -38,7 +53,8 @@ def train(args, model, device, train_loader, optimizer, epoch):
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
+                       100. * batch_idx / len(train_loader), loss.item()))
+
 
 def test(args, model, device, test_loader):
     model.eval()
@@ -48,8 +64,8 @@ def test(args, model, device, test_loader):
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
-            pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
+            test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= len(test_loader.dataset)
@@ -57,6 +73,7 @@ def test(args, model, device, test_loader):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
+
 
 def main():
     # Training settings
@@ -77,10 +94,34 @@ def main():
                         help='random seed (default: 1)')
     parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                         help='how many batches to wait before logging training status')
-    
+
     parser.add_argument('--save-model', action='store_true', default=False,
                         help='For Saving the current Model')
+    parser.add_argument('--crxb_size', type=int, default=64, help='corssbar size')
+    parser.add_argument('--vdd', type=float, default=3.3, help='supply voltage')
+    parser.add_argument('--gwire', type=float, default=0.0357,
+                        help='wire conductacne')
+    parser.add_argument('--gload', type=float, default=0.25,
+                        help='load conductance')
+    parser.add_argument('--gmax', type=float, default=0.000333,
+                        help='maximum cell conductance')
+    parser.add_argument('--gmin', type=float, default=0.000000333,
+                        help='minimum cell conductance')
+    parser.add_argument('--ir_drop', type=bool, default=False,
+                        help='switch to turn on ir drop analysis')
+    parser.add_argument('--scaler_dw', type=float, default=1,
+                        help='scaler to compress the conductance')
+
     args = parser.parse_args()
+
+    # parameters
+    ir_drop = args.ir_drop
+    crxb_size = args.crxb_size
+    gmax = args.gmax
+    gmin = args.gmin
+    vdd = args.vdd
+    scaler_dw = args.scaler_dw
+
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
     torch.manual_seed(args.seed)
@@ -97,13 +138,13 @@ def main():
         batch_size=args.batch_size, shuffle=True, **kwargs)
     test_loader = torch.utils.data.DataLoader(
         datasets.MNIST('../data', train=False, transform=transforms.Compose([
-                           transforms.ToTensor(),
-                           transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])),
         batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
-
-    model = Net().to(device)
+    model = Net(crxb_size=crxb_size, gmax=gmax, gmin=gmin,
+                vdd=vdd, ir_drop=ir_drop, device=device, scaler_dw=scaler_dw).to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
     for epoch in range(1, args.epochs + 1):
@@ -111,7 +152,8 @@ def main():
         test(args, model, device, test_loader)
 
     if (args.save_model):
-        torch.save(model.state_dict(),"mnist_cnn.pt")
-        
+        torch.save(model.state_dict(), "mnist_cnn.pt")
+
+
 if __name__ == '__main__':
     main()
