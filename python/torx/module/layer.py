@@ -14,9 +14,9 @@ adc = _adc.apply
 
 
 class crxb_Conv2d(nn.Conv2d):
-    def __init__(self, in_channels, out_channels, kernel_size, ir_drop, device, gmax, gmin, scaler_dw=1,
-                 vdd=3.3, stride=1, padding=0, dilation=1, groups=1, bias=True, crxb_size=64,
-                 quantize=8, enable_ec_SAF=False):
+    def __init__(self, in_channels, out_channels, kernel_size, ir_drop, device, gmax, gmin, gwire,
+                 gload, scaler_dw=1, vdd=3.3, stride=1, padding=0, dilation=1,
+                 groups=1, bias=True, crxb_size=64, quantize=8, enable_ec_SAF=False):
         super(crxb_Conv2d, self).__init__(in_channels, out_channels, kernel_size,
                                           stride, padding, dilation, groups, bias)
 
@@ -54,7 +54,8 @@ class crxb_Conv2d(nn.Conv2d):
         self.delta_g = (self.Gmax-self.Gmin)/(2**7)  # conductance step
         self.w2g = w2g(self.delta_g, Gmin=self.Gmin, G_SA0=self.Gmax,
                        G_SA1=self.Gmin, weight_shape=weight_crxb.shape)
-
+        self.Gwire = gwire
+        self.Gload = gload
         # DAC
         self.Vdd = vdd  # unit: volt
         self.delta_v = self.Vdd/(self.n_lvl-1)
@@ -185,8 +186,8 @@ class crxb_Conv2d(nn.Conv2d):
 
 
 class crxb_Linear(nn.Linear):
-    def __init__(self, in_features, out_features, ir_drop, device, gmax, gmin, vdd=3.3,
-                 scaler_dw=1, bias=True, crxb_size=64, quantize=8, enable_ec_SAF=False, ):
+    def __init__(self, in_features, out_features, ir_drop, device, gmax, gmin, gwire, gload,
+                 vdd=3.3, scaler_dw=1, bias=True, crxb_size=64, quantize=8, enable_ec_SAF=False, ):
         super(crxb_Linear, self).__init__(in_features, out_features, bias)
 
         self.ir_drop = ir_drop
@@ -218,7 +219,8 @@ class crxb_Linear(nn.Linear):
         self.delta_g = (self.Gmax-self.Gmin)/(2**7)  # conductance step
         self.w2g = w2g(self.delta_g, Gmin=self.Gmin, G_SA0=self.Gmax,
                        G_SA1=self.Gmin, weight_shape=weight_crxb.shape)
-
+        self.Gwire = gwire
+        self.Gload = gload
         # DAC
         self.scaler_dw = scaler_dw
         self.Vdd = vdd  # unit: volt
