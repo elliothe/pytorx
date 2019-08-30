@@ -16,107 +16,127 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from .saf import SAF
 
-class w2g(nn.Module):
-    '''
-    perfrom the weight conversion within this function, which convert the 
-    post-quantization fixed point weight (weight_hat) into a pair of
-    conductance values. output[0] is the G_pos and output[1] is the G_neg
-    '''
 
-    def __init__(self, delta_g, Gmin, G_SA0, G_SA1, weight_shape,
-                 enable_rand=False, enable_SAF=False):
-        super(w2g, self).__init__()
+class W2G(nn.Module):
+    ''' Convert float weight to conductance (Siemens).
+
+    This module convert convert the post-quantization fixed point weight
+    (weight_hat) into a pair of conductance values. output[0] is the G_pos
+    and output[1] is the G_neg.
+
+    Args:
+        delta_g (in Siemens): resolution of memristor cell.
+        g_min (in Siemens): the minimum conductance.
+        g_sa0 (in Siemens): stuck-at-0 conductance.
+        g_sa1 (in Siemens): stuck-at-1 conductance.
+        p_sa0 (float): stuck-at-0 rate.
+        p_sa1 (float): stuck-at-1 rate.
+    '''
+    def __init__(self,
+                 delta_g,
+                 g_min,
+                 g_sa0,
+                 g_sa1,
+                 weight_shape,
+                 enable_rand=False,
+                 enable_saf=False):
+        super(W2G, self).__init__()
         self.delta_g = delta_g
-        self.Gmin = Gmin
-        self.G_SA0 = G_SA0
-        self.G_SA1 = G_SA1
-        self.p_SA0 = 0
-        self.p_SA1 = 0
+        self.g_min = g_min
+        self.g_sa0 = g_sa0
+        self.g_sa1 = g_sa1
+        self.p_sa0 = 0
+        self.p_sa1 = 0
         self.enable_rand = enable_rand
-        self.enable_SAF = enable_SAF
-        self.SAF_pos = SAF(weight_shape, p_SA0=self.p_SA0, p_SA1=self.p_SA1,
-                           G_SA0=self.G_SA0, G_SA1=self.G_SA1)
-        self.SAF_neg = SAF(weight_shape, p_SA0=self.p_SA0, p_SA1=self.p_SA1,
-                           G_SA0=self.G_SA0, G_SA1=self.G_SA1)
+        self.enable_saf = enable_saf
+        # define stuck-at-fault for postive and negative arrays separately.
+        self.saf_pos = SAF(weight_shape,
+                           p_sa0=self.p_sa0,
+                           p_sa1=self.p_sa1,
+                           g_sa0=self.g_sa0,
+                           g_sa1=self.g_sa1)
+        self.saf_neg = SAF(weight_shape,
+                           p_sa0=self.p_sa0,
+                           p_sa1=self.p_sa1,
+                           g_sa0=self.g_sa0,
+                           g_sa1=self.g_sa1)
 
     def forward(self, input):
-        # x_relu() function is Critical
-        self.G_pos = self.Gmin + x_relu(input) * self.delta_g
-        self.G_neg = self.Gmin + F.relu(-input) * self.delta_g
+        ''' input is the post-quantization weight tensor'''
+        # x_relu() function is must-have, for correct pos/neg split.
+        self.g_pos = self.g_min + X_RELU(input) * self.delta_g
+        self.g_neg = self.g_min + F.relu(-input) * self.delta_g
+
         # the following two steps will update the SAF masking if enable_rand is True
-        if self.enable_SAF:
-            output = torch.cat((self.SAF_pos(self.G_pos).unsqueeze(0),
-                                self.SAF_neg(self.G_neg).unsqueeze(0)),
-                               0)
+        if self.enable_saf:
+            output = torch.cat(
+                (self.saf_pos(self.g_pos).unsqueeze(0), self.saf_neg(
+                    self.g_neg).unsqueeze(0)), 0)
         else:
-            output = torch.cat((self.G_pos.unsqueeze(0),
-                                self.G_neg.unsqueeze(0)), 0)
+            output = torch.cat(
+                (self.G_pos.unsqueeze(0), self.G_neg.unsqueeze(0)), 0)
 
         return output
 
-    def error_compensation(self):
-        pos_SA0 = self.SAF_pos.index_SA0().float().cuda()
-        pos_SA1 = self.SAF_pos.index_SA1().float().cuda()
-        neg_SA0 = self.SAF_neg.index_SA0().float().cuda()
-        neg_SA1 = self.SAF_neg.index_SA1().float().cuda()
-        G_pos_diff = (self.G_pos-self.G_SA0)*pos_SA0 + \
-            (self.G_pos-self.G_SA1)*pos_SA1
-        G_neg_diff = (self.G_neg-self.G_SA0)*neg_SA0 + \
-            (self.G_neg-self.G_SA1)*neg_SA1
+    def error_correction(self):
+        ''' error correction to compensate SAF error. '''
+        pos_sa0 = self.saf_pos.index_SA0().float().cuda()
+        pos_sa1 = self.saf_pos.index_SA1().float().cuda()
+        neg_sa0 = self.saf_neg.index_SA0().float().cuda()
+        neg_sa1 = self.saf_neg.index_SA1().float().cuda()
+        g_pos_diff = (self._pos - self.g_sa0) * pos_sa0 + \
+            (self.g_pos - self.g_sa1) * pos_sa1
+        g_neg_diff = (self.G_neg - self.g_sa0) * neg_sa0 + \
+            (self.g_neg - self.g_sa1) * neg_sa1
 
-        return G_pos_diff, G_neg_diff
+        return g_pos_diff, g_neg_diff
 
-    def update_SAF(self, enable_SAF, p_SA0, p_SA1, new_SAF_mask=False, enable_rand=False):
-        self.p_SA0 = p_SA0
-        self.p_SA1 = p_SA1
-        self.enable_SAF = enable_SAF
+    def update_saf(self,
+                   enable_saf,
+                   p_sa0,
+                   p_sa1,
+                   new_saf_mask=False,
+                   enable_rand=False):
+        ''' update configuration for stuck-at-fault'''
+        self.p_sa0 = p_sa0
+        self.p_sa1 = p_sa1
+        self.enable_saf = enable_saf
         # update the SAF_pos and SAF_neg modules
-        self.SAF_pos.p_SA0.data[0] = self.p_SA0
-        self.SAF_pos.p_SA1.data[0] = self.p_SA1
-        self.SAF_neg.p_SA0.data[0] = self.p_SA0
-        self.SAF_neg.p_SA1.data[0] = self.p_SA1
+        self.saf_pos.p_SA0.data[0] = self.p_SA0
+        self.saf_pos.p_SA1.data[0] = self.p_SA1
+        self.saf_neg.p_SA0.data[0] = self.p_SA0
+        self.saf_neg.p_SA1.data[0] = self.p_SA1
         # enable the random mask, thus each forward call get a new p_state mask
         self.enable_rand = enable_rand
-        self.SAF_pos.enable_rand = enable_rand
-        self.SAF_neg.enable_rand = enable_rand
+        self.saf_pos.enable_rand = enable_rand
+        self.saf_neg.enable_rand = enable_rand
 
-        if new_SAF_mask:
-            self.SAF_pos.p_state.data.uniform_()
-            self.SAF_neg.p_state.data.uniform_()
+        if new_saf_mask:
+            self.saf_pos.p_state.data.uniform_()
+            self.saf_neg.p_state.data.uniform_()
 
 
 class _newrelu(torch.autograd.Function):
     '''
-    This self-define function is used for mapping weight on positive 
-    and negative array. It will prevent close to zero weights trapped 
-    within the region that quantized into zero, which will never be 
+    This self-define function is used for mapping weight on positive
+    and negative array. It will prevent close to zero weights trapped
+    within the region that quantized into zero, which will never be
     updated by back-propagation, thus degrades the accuracy. 
-    ''' 
+    '''
+
     @staticmethod
     def forward(ctx, input):
         ctx.save_for_backward(input)
         return input.clamp(min=0)
-    
+
     @staticmethod
     def backward(ctx, grad_output):
         input, = ctx.saved_tensors
         grad_input = grad_output.clone()
         grad_input[input < 0] = 0
         return grad_input
-    
-x_relu = _newrelu.apply
 
-############################################################
-# Testbenchs
-############################################################
 
-def test_w2g_module_output_conductance_range():
-    '''
-    ensure the w2g module has the correct output conductance range
-    which is between G_min and G_max.
-    '''
-
-    return
+X_RELU = _newrelu.apply

@@ -81,3 +81,20 @@ def test_sa0_sa1_overlap():
             ).sum().item() == 0, 'exist element is 1 for both SA0/1 index!'
 
 
+#######################################################################
+# weight to conductance (w2g)
+# -------
+def test_w2g_module_output_conductance_range():
+    '''
+    ensure the w2g module has the correct output conductance range
+    which is between G_min and G_max.
+    '''
+    weight_shape = torch.Size([3, 1, 3, 3])
+    test_module = W2G(delta_g=(1/3e3 - 1/3e6)/2**7,
+                      gmin=1/3e6,
+                      g_sa0=1/3e,
+                      g_sa1,
+                      weight_shape=weight_shape,           
+    )
+
+    return

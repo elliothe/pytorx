@@ -15,6 +15,7 @@
 
 from .dac import *
 from .saf import *
+from .w2g import *
 # from .crossbar import *
 
 # from . import saf

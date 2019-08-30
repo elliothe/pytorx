@@ -20,7 +20,7 @@ import torch.nn as nn
 class SAF(nn.Module):
     '''Stuck-At-Fault Module'''
 
-    def __init__(self, G_shape, p_SA0=0.1, p_SA1=0.1, G_SA0=1e6, G_SA1=1e3):
+    def __init__(self, g_shape, p_sa0=0.1, p_sa1=0.1, g_sa0=1e6, g_sa1=1e3):
         super(SAF, self).__init__()
         r'''
         This module performs the Stuck-At-Fault (SAF) non-ideal effect injection.
@@ -34,24 +34,23 @@ class SAF(nn.Module):
         '''
 
         # stuck at 0 leads to high conductance
-        self.p_sa0 = nn.Parameter(torch.Tensor([p_SA0]),
+        self.p_sa0 = nn.Parameter(torch.Tensor([p_sa0]),
                                   requires_grad=False)  # probability of SA0
-        self.g_sa0 = G_SA0
+        self.g_sa0 = g_sa0
         # stuck at 1 leads to low conductance
-        self.p_sa1 = nn.Parameter(torch.Tensor([p_SA1]),
+        self.p_sa1 = nn.Parameter(torch.Tensor([p_sa1]),
                                   requires_grad=False)  # probability of SA1
-        self.g_sa1 = G_SA1
+        self.g_sa1 = g_sa1
 
-        assert (
-            self.p_sa0 + self.p_sa1
-        ) <= 1, 'The sum of SA0 and SA1 ratio should be less than 1 !!'
+        assert (self.p_sa0 + self.p_sa1
+                ) <= 1, 'The sum of SA0 and SA1 ratio should be less than 1 !!'
 
         # TODO: maybe change the SAF profile to uint8 format to avoid calculating the SAF
         # defect state on-the-fly, for simulation speedup. However the current setup has
         # higher configurability to simulate the real-time SAF state if there is run-time change.
 
         # initialize a random mask
-        self.p_state = nn.Parameter(torch.Tensor(G_shape), requires_grad=False)
+        self.p_state = nn.Parameter(torch.Tensor(g_shape), requires_grad=False)
         self.update_saf_profile()  # init the SAF distribution profile
 
     def forward(self, input):
@@ -78,6 +77,7 @@ class SAF(nn.Module):
 
         #TODO(zhezhi): add more stuck-at-fault distribution.
 
+
 class _SAF(torch.autograd.Function):
     r'''
     This autograd function performs the gradient mask for the weight
@@ -87,11 +87,11 @@ class _SAF(torch.autograd.Function):
     Args:
         input (Tensor): weight tensor in FP32
         p_state (Tensor): probability tensor for indicating the SAF state
-            w.r.t the preset SA0/1 rate (i.e., p_SA0 and p_SA1).
-        p_SA0 (FP): Stuck-at-Fault rate at 0 (range from 0 to 1).
-        p_SA1 (FP): Stuck-at-Fault rate at 1 (range from 0 to 1).
-        G_SA0 (FP): Stuck-at-Fault conductance at 0 (in unit of S).
-        G_SA1 (FP): Stuck-at-Fault conductance at 1 (in unit of S).
+            w.r.t the preset SA0/1 rate (i.e., p_sa0 and p_sa1).
+        p_sa0 (FP): Stuck-at-Fault rate at 0 (range from 0 to 1).
+        p_sa0 (FP): Stuck-at-Fault rate at 1 (range from 0 to 1).
+        g_sa0 (FP): Stuck-at-Fault conductance at 0 (in unit of S).
+        g_sa1 (FP): Stuck-at-Fault conductance at 1 (in unit of S).
     '''
 
     @staticmethod
@@ -99,7 +99,7 @@ class _SAF(torch.autograd.Function):
         ctx.save_for_backward(p_state, p_sa0, p_sa1)
         output = input.clone()
         # fixed the conductance based on profile.
-        output[p_state.le(p_sa0)] = g_sa0  
+        output[p_state.le(p_sa0)] = g_sa0
         output[p_state.gt(1 - p_sa1)] = g_sa1
         return output
 
