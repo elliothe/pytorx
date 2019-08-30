@@ -241,7 +241,7 @@ def main():
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
     criterion = torch.nn.CrossEntropyLoss().to(device)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1,
-                                                           patience=10, verbose=True, threshold=0.05,
+                                                           patience=5, verbose=True, threshold=0.05,
                                                            threshold_mode='rel', min_lr=1e-4)
     loss_log = []
     for epoch in range(1, args.epochs + 1):
@@ -253,9 +253,7 @@ def main():
         val_loss = validate(model=model, device=device, criterion=criterion,
                             val_loader=test_loader)
 
-        lr_last = optimizer.param_groups[0]['lr']
         scheduler.step(val_loss)
-        lr_now = optimizer.param_groups[0]['lr']
 
         # break the training
         if optimizer.param_groups[0]['lr'] < ((scheduler.min_lrs[0] / scheduler.factor) + scheduler.min_lrs[0]) / 2:
