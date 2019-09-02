@@ -8,7 +8,7 @@ echo "Current host is: $HOST"
 case $HOST in
 "alpha")
     PYTHON="/home/elliot/anaconda3/envs/pytorch_041/bin/python" # python environment
-    TENSORBOARD='/home/elliot/anaconda3/envs/pytorch_041/bin/tensorboard'
+#    TENSORBOARD='/home/elliot/anaconda3/envs/pytorch_041/bin/tensorboard'
     ;;
 esac
 
@@ -47,23 +47,4 @@ $PYTHON main.py --dataset ${dataset} \
     --evaluate --resume ${pretrained_model} \
     --adv_eval --epoch_delay 5 
 } &
-############## Tensorboard logging ##########################
-{
-if [ "$enable_tb_display" = true ]; then 
-    sleep 30 
-    wait
-    $TENSORBOARD --logdir $tb_path  --port=6006
-fi
-} &
-{
-if [ "$enable_tb_display" = true ]; then
-    sleep 45
-    wait
-    case $HOST in
-    "alpha")
-        google-chrome http://0.0.0.0:6006/
-        ;;
-    esac
-fi 
-} &
-wait
+

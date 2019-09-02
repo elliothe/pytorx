@@ -41,7 +41,8 @@ class AverageMeter(object):
 
 
 class Net(nn.Module):
-    def __init__(self, crxb_size, gmin, gmax, gwire, gload, vdd, ir_drop, device, scaler_dw):
+    def __init__(self, crxb_size, gmin, gmax, gwire, gload, vdd, ir_drop, freq, temp, device, scaler_dw, enable_noise,
+                 enable_SAF, enable_ec_SAF):
         super(Net, self).__init__()
         # self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         # self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
@@ -49,17 +50,22 @@ class Net(nn.Module):
         # self.fc1 = nn.Linear(320, 50)
         # self.fc2 = nn.Linear(50, 10)
         self.conv1 = crxb_Conv2d(1, 10, kernel_size=5, crxb_size=crxb_size, scaler_dw=scaler_dw,
-                                 gwire=gwire, gload=gload, gmax=gmax, gmin=gmin, vdd=vdd,
-                                 ir_drop=ir_drop, device=device)
-        self.conv2 = crxb_Conv2d(10, 20, kernel_size=5, crxb_size=crxb_size, gwire=gwire, gload=gload,
-                                 gmax=gmax, gmin=gmin, vdd=vdd, ir_drop=ir_drop, device=device)
+                                 gwire=gwire, gload=gload, gmax=gmax, gmin=gmin, vdd=vdd, freq=freq, temp=temp,
+                                 enable_SAF=enable_SAF, enable_ec_SAF=enable_ec_SAF,
+                                 enable_noise=enable_noise, ir_drop=ir_drop, device=device)
+        self.conv2 = crxb_Conv2d(10, 20, crxb_size=crxb_size, scaler_dw=scaler_dw,
+                                 gwire=gwire, gload=gload, gmax=gmax, gmin=gmin, vdd=vdd, freq=freq, temp=temp,
+                                 enable_SAF=enable_SAF, enable_ec_SAF=enable_ec_SAF,
+                                 enable_noise=enable_noise, ir_drop=ir_drop, device=device)
         self.conv2_drop = nn.Dropout2d()
         self.fc1 = crxb_Linear(320, 50, crxb_size=crxb_size, scaler_dw=scaler_dw,
-                               gmax=gmax, gmin=gmin, gwire=gwire, gload=gload,
-                               vdd=vdd, ir_drop=ir_drop, device=device)
-        self.fc2 = crxb_Linear(50, 10, crxb_size=crxb_size, scaler_dw=scaler_dw, gwire=gwire, gload=gload,
-                               gmax=gmax, gmin=gmin, vdd=vdd, ir_drop=ir_drop, device=device)
-
+                               gmax=gmax, gmin=gmin, gwire=gwire, gload=gload, freq=freq, temp=temp,
+                               vdd=vdd, ir_drop=ir_drop, device=device, enable_noise=enable_noise,
+                               enable_ec_SAF=enable_ec_SAF, enable_SAF=enable_SAF)
+        self.fc2 = crxb_Linear(50, 10, crxb_size=crxb_size, scaler_dw=scaler_dw,
+                               gmax=gmax, gmin=gmin, gwire=gwire, gload=gload, freq=freq, temp=temp,
+                               vdd=vdd, ir_drop=ir_drop, device=device, enable_noise=enable_noise,
+                               enable_ec_SAF=enable_ec_SAF, enable_SAF=enable_SAF)
 
     def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
@@ -172,6 +178,17 @@ def main():
                         help='scaler to compress the conductance')
     parser.add_argument('--test', action='store_true', default=False,
                         help='scaler to compress the conductance')
+    parser.add_argument('--enable_noise', action='store_true', default=False,
+                        help='switch to turn on noise analysis')
+    parser.add_argument('--enable_SAF', action='store_true', default=False,
+                        help='switch to turn on SAF analysis')
+    parser.add_argument('--enable_ec_SAF', action='store_true', default=False,
+                        help='switch to turn on SAF error correction')
+    parser.add_argument('--freq', type=float, default=10e6,
+                        help='scaler to compress the conductance')
+    parser.add_argument('--temp', type=float, default=300,
+                        help='scaler to compress the conductance')
+
 
     args = parser.parse_args()
 
@@ -183,6 +200,8 @@ def main():
     if args.ir_drop and args.test_batch_size > 150:
         warnings.warn("Reduce the batch size, IR drop is memory hungry!")
 
+    if not args.test and args.enable_noise:
+        raise KeyError("Noise can cause unsuccessful training!")
 
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
@@ -207,7 +226,8 @@ def main():
         batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
     model = Net(crxb_size=args.crxb_size, gmax=args.gmax, gmin=args.gmin, gwire=args.gwire, gload=args.gload,
-                vdd=args.vdd, ir_drop=args.ir_drop, device=device, scaler_dw=args.scaler_dw).to(device)
+                vdd=args.vdd, ir_drop=args.ir_drop, device=device, scaler_dw=args.scaler_dw, freq=args.freq, temp=args.temp,
+                enable_SAF=args.enable_SAF, enable_noise=args.enable_noise, enable_ec_SAF=args.enable_ec_SAF).to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
     criterion = torch.nn.CrossEntropyLoss().to(device)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2,
