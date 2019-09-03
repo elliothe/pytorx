@@ -17,7 +17,7 @@ markdown:
 Features
 --------------------------------------------------------------------------------
 
-* ** <span style="background-color: #FFFF00">This is the alpha version of PytorX, a beta version will be released shortly</span> **
+* **This is the `alpha` version of PytorX, a beta version will be released shortly**
 * **Clean and Easy-to-Ues** <!-- — Built on pytorch and GPU enabled -->
 * **Evaluation for Research of Device/Circuit/Architecture** 
 
