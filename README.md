@@ -64,9 +64,9 @@ export PYTHON="path to python interpreter"
 python main.py --
 ``` -->
 
-### Results
+### Usage
 
-　Some experimental results are shown here
+$ ./run.sh
 
 ### Methods
 
