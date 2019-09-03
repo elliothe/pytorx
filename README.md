@@ -70,5 +70,9 @@ Then you are ready to go~
 
 ### Usage
 
-$ ./run.sh
+Simply run
+```bash
+$ bash run.sh
+```
+to execute a MNIST example.
 
