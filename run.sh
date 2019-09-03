@@ -31,11 +31,6 @@ $PYTHON $benchmark  --epochs $epochs \
                     --gwire $gwire\
                     --gload $gload\
                     --gmax $gmax\
-                    --gmin $gmin\
-                    --test\
-                    --enable_noise\
-                    --enable_SAF\
-                    --enable_ec_SAF\
-                    --ir_drop
+                    --gmin $gmin
 } &
 
