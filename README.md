@@ -17,6 +17,7 @@ markdown:
 Features
 --------------------------------------------------------------------------------
 
+* **This is the alpha version of PytorX**
 * **Clean and Easy-to-Ues** <!-- — Built on pytorch and GPU enabled -->
 * **Evaluation for Research of Device/Circuit/Architecture** 
 
