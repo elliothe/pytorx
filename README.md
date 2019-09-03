@@ -56,7 +56,7 @@ If you find this project useful to you, please cite [our work](https://arxiv.org
 Set the environment variable [`PYTHONPATH`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH) to tell python where to find the library. For example, assume we cloned pytorch repository on the home directory ~. then we can added the following line in ~/.bashrc. 
 
 ```bash {.line-numbers}
-export PYTORX_HOME=/path/to/pytorx
+export PYTORX_HOME="path to PytorX"
 export PYTHON="path to python interpreter"
 ```
 <!-- 
