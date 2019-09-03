@@ -17,7 +17,7 @@ markdown:
 Features
 --------------------------------------------------------------------------------
 
-* **This is the alpha version of PytorX**
+* **![#f03c15](https://placehold.it/15/f03c15/000000?text=+) `This is the alpha version of PytorX, a beta version will be released shortly` **
 * **Clean and Easy-to-Ues** <!-- — Built on pytorch and GPU enabled -->
 * **Evaluation for Research of Device/Circuit/Architecture** 
 
