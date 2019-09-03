@@ -28,14 +28,14 @@ class w2g(nn.Module):
     '''
 
     def __init__(self, delta_g, Gmin, G_SA0, G_SA1, weight_shape,
-                 enable_rand=False, enable_SAF=False):
+                 enable_rand=True, enable_SAF=False):
         super(w2g, self).__init__()
         self.delta_g = delta_g
         self.Gmin = Gmin
         self.G_SA0 = G_SA0
         self.G_SA1 = G_SA1
-        self.p_SA0 = 0
-        self.p_SA1 = 0
+        self.p_SA0 = 0.1
+        self.p_SA1 = 0.1
         self.enable_rand = enable_rand
         self.enable_SAF = enable_SAF
         self.SAF_pos = SAF(weight_shape, p_SA0=self.p_SA0, p_SA1=self.p_SA1,

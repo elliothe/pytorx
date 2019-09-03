@@ -15,11 +15,11 @@ batch_size=1000
 test_batch_size=100
 crxb_size=64
 vdd=3.3
-gwire=0.0375
+gwire=0.375
 gload=0.25
 gmax=0.000333
-gmin=0.000000333
-
+gmin=0.0000000333
+freq=10e6
 
 {
 $PYTHON $benchmark  --epochs $epochs \
@@ -27,9 +27,15 @@ $PYTHON $benchmark  --epochs $epochs \
                     --test_batch_size $test_batch_size\
                     --crxb_size $crxb_size\
                     --vdd $vdd\
+                    --freq $freq\
                     --gwire $gwire\
                     --gload $gload\
                     --gmax $gmax\
-                    --gmin $gmin
+                    --gmin $gmin\
+                    --test\
+                    --enable_noise\
+                    --enable_SAF\
+                    --enable_ec_SAF\
+                    --ir_drop
 } &
 

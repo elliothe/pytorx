@@ -14,13 +14,12 @@
 # ==============================================================================
 
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
 
 
 class SAF(nn.Module):
 
-    def __init__(self, G_shape, p_SA0=0.1, p_SA1=0.1, G_SA0=1e6, G_SA1=1e3):
+    def __init__(self, G_shape, p_SA0=0.1, p_SA1=0.1, G_SA0=3e-3, G_SA1=3e-6):
         super(SAF, self).__init__()
         '''
         This module performs the Stuck-At-Fault (SAF) non-ideal effect injection.
@@ -39,7 +38,6 @@ class SAF(nn.Module):
         self.p_SA1 = nn.Parameter(torch.Tensor(
             [p_SA1]), requires_grad=False)  # probability of SA1
         self.G_SA1 = G_SA1
-
         assert (
             self.p_SA0+self.p_SA1) <= 1, 'The sum of probability of SA0 and SA1 is greater than 1 !!'
 
