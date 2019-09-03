@@ -102,14 +102,6 @@ class crxb_Conv2d(nn.Conv2d):
         self.tau = 0.5  # Probability of RTN
         self.a = 1.662e-7  # RTN fitting parameter
         self.b = 0.0015  # RTN fitting parameter
-        # self.rand_g = []
-        # self.rand_p = []
-
-        # random seed for Gaussian term and Poisson term
-        # self.rand_g = nn.Parameter(torch.Tensor(self.w2g(weight_crxb).shape),
-        #                            requires_grad=False)
-        # self.rand_p = nn.Parameter(torch.Tensor(self.w2g(weight_crxb).shape),
-        #                            requires_grad=False)
 
     def num_pad(self, source, target):
         crxb_index = math.ceil(source / target)
@@ -159,11 +151,6 @@ class crxb_Conv2d(nn.Conv2d):
                                          self.crxb_row, self.crxb_size).transpose(1, 2)
         # convert the floating point weight into conductance pair values
         G_crxb = self.w2g(weight_crxb)
-
-        # self.rand_g = nn.Parameter(torch.Tensor(G_crxb.shape),
-        #                            requires_grad=False)
-        # self.rand_p = nn.Parameter(torch.Tensor(G_crxb.shape),
-        #                            requires_grad=False)
 
         # 2.4. compute matrix multiplication followed by reshapes
 
@@ -347,13 +334,6 @@ class crxb_Linear(nn.Linear):
         self.a = 1.662e-7  # RTN fitting parameter
         self.b = 0.0015  # RTN fitting parameter
 
-        # random seed for Gaussian term and Poisson term
-        # self.rand_g = nn.Parameter(torch.Tensor(self.w2g(weight_crxb).shape),
-        #                            requires_grad=False)
-        # self.rand_p = nn.Parameter(torch.Tensor(self.w2g(weight_crxb).shape),
-        #                            requires_grad=False)
-
-
     def num_pad(self, source, target):
         crxb_index = math.ceil(source / target)
         num_padding = crxb_index * target - source
@@ -399,7 +379,7 @@ class crxb_Linear(nn.Linear):
                                   requires_grad=False)
             rand_g = nn.Parameter(torch.Tensor(G_crxb.shape),
                                   requires_grad=False)
-            
+
             if self.device.type == "cuda":
                 rand_p = rand_p.cuda()
                 rand_g = rand_g.cuda()
