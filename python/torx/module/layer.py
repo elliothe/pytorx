@@ -399,7 +399,7 @@ class crxb_Linear(nn.Linear):
                 G_g = grms * self.rand_g
 
             G_crxb += (G_g + G_p)
-            # G_crxb += G_g
+
         # this block is to calculate the ir drop of the crossbar
 
         if self.ir_drop:
@@ -435,7 +435,7 @@ class crxb_Linear(nn.Linear):
             output_crxb = torch.matmul(G_crxb[0], input_crxb) \
                           - torch.matmul(G_crxb[1], input_crxb)
 
-        # perform ADC operation (i.e., current to digital conversion)
+        # 3. perform ADC operation (i.e., current to digital conversion)
         with torch.no_grad():
             if self.training:
                 self.delta_i = output_crxb.abs().max() / (self.h_lvl)
