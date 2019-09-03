@@ -4,47 +4,19 @@
 HOST=$(hostname)
 echo "Current host is: $HOST"
 
-# Remember to configure the conda environment to pytorch 0.4.1
-case $HOST in
-"alpha")
-    PYTHON="/home/elliot/anaconda3/envs/pytorch_041/bin/python" # python environment
-#    TENSORBOARD='/home/elliot/anaconda3/envs/pytorch_041/bin/tensorboard'
-    ;;
-esac
+# path to python exec
+PYTHON="/home/ubuntu/anaconda3/envs/pytorch1p1/bin/python"
 
-DATE=`date +%Y-%m-%d`
-
-if [ ! -d "$DIRECTORY" ]; then
-    mkdir ./save/${DATE}/
-fi
-
-############### Configurations ########################
-enable_tb_display=false # enable tensorboard display
-model=noise_resnet20
-dataset=cifar10
-epochs=160
-batch_size=128
-optimizer=SGD
-# add more labels as additional info into the saving path
-label_info=eval
+# path to benchmark
+benchmark="/home/ubuntu/PytorX/benchmark/mnist.py"
 
 
-data_path='/home/elliot/data/pytorch/cifar10' #dataset path
-tb_path=./save/${DATE}/${dataset}_${model}_${epochs}_${optimizer}_${label_info}/tb_log  #tensorboard log path
-
-# set the pretrained model path
-pretrained_model=./save/2019-04-19/cifar10_noise_resnet20_160_SGD_PNI_W_channelwise/checkpoint.pth.tar
 ############### Neural network ############################
+epochs=20
+
+
 {
-$PYTHON main.py --dataset ${dataset} \
-    --data_path ${data_path}   \
-    --arch ${model} --save_path ./save/${DATE}/${dataset}_${model}_${epochs}_${optimizer}_${label_info} \
-    --epochs ${epochs} --learning_rate 0.1 \
-    --optimizer ${optimizer} \
-	--schedule 80 120  --gammas 0.1 0.1 \
-    --batch_size ${batch_size} --workers 4 --ngpu 1 --gpu_id 1 \
-    --print_freq 100 --decay 0.0002 --momentum 0.9 \
-    --evaluate --resume ${pretrained_model} \
-    --adv_eval --epoch_delay 5 
+$PYTHON $benchmark --epochs $epochs \
+
 } &
 

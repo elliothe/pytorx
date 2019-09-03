@@ -53,7 +53,7 @@ class Net(nn.Module):
                                  gwire=gwire, gload=gload, gmax=gmax, gmin=gmin, vdd=vdd, freq=freq, temp=temp,
                                  enable_SAF=enable_SAF, enable_ec_SAF=enable_ec_SAF,
                                  enable_noise=enable_noise, ir_drop=ir_drop, device=device)
-        self.conv2 = crxb_Conv2d(10, 20, crxb_size=crxb_size, scaler_dw=scaler_dw,
+        self.conv2 = crxb_Conv2d(10, 20, kernel_size=5, crxb_size=crxb_size, scaler_dw=scaler_dw,
                                  gwire=gwire, gload=gload, gmax=gmax, gmin=gmin, vdd=vdd, freq=freq, temp=temp,
                                  enable_SAF=enable_SAF, enable_ec_SAF=enable_ec_SAF,
                                  enable_noise=enable_noise, ir_drop=ir_drop, device=device)
