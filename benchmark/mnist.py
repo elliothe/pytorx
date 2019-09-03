@@ -177,7 +177,7 @@ def main():
     parser.add_argument('--scaler_dw', type=float, default=1,
                         help='scaler to compress the conductance')
     parser.add_argument('--test', action='store_true', default=False,
-                        help='scaler to compress the conductance')
+                        help='switch to turn inference mode')
     parser.add_argument('--enable_noise', action='store_true', default=False,
                         help='switch to turn on noise analysis')
     parser.add_argument('--enable_SAF', action='store_true', default=False,
