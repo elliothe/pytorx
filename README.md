@@ -54,26 +54,21 @@ If you find this project useful to you, please cite [our work](https://arxiv.org
 
 ### Python package installation
 
-Set the environment variable [`PYTHONPATH`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH) to tell python where to find the library. For example, assume we cloned pytorch repository on the home directory ~. then we can added the following line in ~/.bashrc. 
+Set the environment variable [`PYTHONPATH`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH) to locate the library. For example, assume we cloned pytorch repository on the home directory ~. then we can added the following line in ~/.bashrc. 
 
 ```bash {.line-numbers}
-export PYTORX_HOME="path to PytorX"
-export PYTHON="path to python interpreter"
+export PYTORX_HOME=/path/to/pytorx
+export PYTHONPATH=$PYTORX_HOME/python${PYTHONPATH}
 ```
-<!-- 
+sample code on author's machine:
 ```bash {.line-numbers}
-python main.py --
-``` -->
+export PYTORX_HOME=/Users/elliot/Dropbox/Github/PytorX
+export PYTHONPATH=$PYTORX_HOME/python:${PYTHONPATH}
+```
+
+Then you are ready to go~
 
 ### Usage
 
 $ ./run.sh
-
-### Methods
-
-### Task list
-- [x] @mentions, #refs, [links](), **formatting**, and <del>tags</del> supported
-- [x] list syntax required (any unordered or ordered list supported)
-- [x] this is a complete item
-- [ ] Evaluation of accelerator characteristics in terms of latency, power, etc.
 
