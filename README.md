@@ -13,6 +13,7 @@ markdown:
 </p>
 
 <p align="center">PytorX helps you evaluate Neural Network performance on Crossbar Accelerator.</p>
+
 [![DOI](https://zenodo.org/badge/169944698.svg)](https://zenodo.org/badge/latestdoi/169944698)
 
 Features
