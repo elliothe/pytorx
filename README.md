@@ -60,7 +60,7 @@ Set the environment variable [`PYTHONPATH`](https://docs.python.org/3/using/cmdl
 
 ```bash {.line-numbers}
 export PYTORX_HOME=/path/to/pytorx
-export PYTHONPATH=$PYTORX_HOME/python${PYTHONPATH}
+export PYTHONPATH=$PYTORX_HOME/python:${PYTHONPATH}
 ```
 sample code on author's machine:
 ```bash {.line-numbers}
