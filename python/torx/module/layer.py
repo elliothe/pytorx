@@ -156,13 +156,8 @@ class crxb_Conv2d(nn.Conv2d):
 
         # this block is for introducing stochastic noise into ReRAM conductance
         if self.enable_stochastic_noise:
-            rand_p = nn.Parameter(torch.Tensor(G_crxb.shape),
-                                   requires_grad=False)
-            rand_g = nn.Parameter(torch.Tensor(G_crxb.shape),
-                                  requires_grad=False)
-            if self.device.type == "cuda":
-                rand_p = rand_p.cuda()
-                rand_g = rand_g.cuda()
+            rand_p = torch.empty(G_crxb.shape, device=self.device)
+            rand_g = torch.empty(G_crxb.shape, device=self.device)
             with torch.no_grad():
                 input_reduced = (input_crxb.norm(p=2, dim=0).norm(p=2, dim=3).unsqueeze(dim=3)) / \
                                 (input_crxb.shape[0] * input_crxb.shape[3])
@@ -178,7 +173,7 @@ class crxb_Conv2d(nn.Conv2d):
                 G_p = G_crxb * (self.b * G_crxb + self.a) / (G_crxb - (self.b * G_crxb + self.a))
                 G_p[rand_p.ge(self.tau)] = 0
                 G_g = grms * rand_g
-            G_crxb += (G_g.cuda() + G_p)
+            G_crxb += (G_g + G_p)
 
 
         # this block is to calculate the ir drop of the crossbar
@@ -375,14 +370,8 @@ class crxb_Linear(nn.Linear):
         # 2.4. compute matrix multiplication
         # this block is for introducing stochastic noise into ReRAM conductance
         if self.enable_stochastic_noise:
-            rand_p = nn.Parameter(torch.Tensor(G_crxb.shape),
-                                  requires_grad=False)
-            rand_g = nn.Parameter(torch.Tensor(G_crxb.shape),
-                                  requires_grad=False)
-
-            if self.device.type == "cuda":
-                rand_p = rand_p.cuda()
-                rand_g = rand_g.cuda()
+            rand_p = torch.empty(G_crxb.shape, device=self.device)
+            rand_g = torch.empty(G_crxb.shape, device=self.device)
 
             with torch.no_grad():
                 input_reduced = input_crxb.norm(p=2, dim=0).norm(p=2, dim=3).unsqueeze(dim=3) / (

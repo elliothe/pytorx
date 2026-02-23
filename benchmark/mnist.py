@@ -192,7 +192,7 @@ def main():
 
     args = parser.parse_args()
 
-    best_error = 0
+    best_error = float('inf')
 
     if args.ir_drop and (not args.test):
         warnings.warn("We don't recommend training with IR drop, too slow!")
@@ -229,7 +229,7 @@ def main():
                 vdd=args.vdd, ir_drop=args.ir_drop, device=device, scaler_dw=args.scaler_dw, freq=args.freq, temp=args.temp,
                 enable_SAF=args.enable_SAF, enable_noise=args.enable_noise, enable_ec_SAF=args.enable_ec_SAF).to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
-    criterion = torch.nn.CrossEntropyLoss().to(device)
+    criterion = torch.nn.NLLLoss().to(device)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2,
                                                            patience=2, verbose=True, threshold=0.5,
                                                            threshold_mode='rel', min_lr=1e-4)
@@ -251,7 +251,7 @@ def main():
                 break
 
             loss_log += [(epoch, train_loss, val_loss)]
-            is_best = val_loss > best_error
+            is_best = val_loss < best_error
             best_error = min(val_loss, best_error)
 
             filename = 'checkpoint_' + str(args.crxb_size) + '.pth.tar'
