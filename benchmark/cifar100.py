@@ -52,7 +52,8 @@ class VGG9(nn.Module):
 
     def __init__(self, crxb_size, gmin, gmax, gwire, gload, vdd, ir_drop,
                  freq, temp, device, scaler_dw, enable_noise,
-                 enable_SAF, enable_ec_SAF, num_classes=100):
+                 enable_SAF, enable_ec_SAF, num_classes=100,
+                 quantize=8, weight_precision=None):
         super(VGG9, self).__init__()
 
         crxb_cfg = dict(crxb_size=crxb_size, scaler_dw=scaler_dw,
@@ -60,7 +61,8 @@ class VGG9(nn.Module):
                         vdd=vdd, freq=freq, temp=temp,
                         enable_SAF=enable_SAF, enable_ec_SAF=enable_ec_SAF,
                         enable_noise=enable_noise, ir_drop=ir_drop,
-                        device=device)
+                        device=device, quantize=quantize,
+                        weight_precision=weight_precision)
 
         # Block 1
         self.conv1 = crxb_Conv2d(3, 128, kernel_size=3, padding=1, **crxb_cfg)
@@ -219,6 +221,10 @@ def main():
                         help='operating frequency')
     parser.add_argument('--temp', type=float, default=300,
                         help='operating temperature')
+    parser.add_argument('--quantize', type=int, default=8,
+                        help='quantization resolution of the crossbar')
+    parser.add_argument('--weight_precision', type=int, default=None,
+                        help='bit precision for ReRAM conductance levels (default: same as quantize)')
 
     args = parser.parse_args()
 
@@ -271,7 +277,8 @@ def main():
                  freq=args.freq, temp=args.temp, enable_SAF=args.enable_SAF,
                  enable_noise=args.enable_noise,
                  enable_ec_SAF=args.enable_ec_SAF,
-                 num_classes=100).to(device)
+                 num_classes=100, quantize=args.quantize,
+                 weight_precision=args.weight_precision).to(device)
 
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)

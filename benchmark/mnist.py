@@ -42,30 +42,22 @@ class AverageMeter(object):
 
 class Net(nn.Module):
     def __init__(self, crxb_size, gmin, gmax, gwire, gload, vdd, ir_drop, freq, temp, device, scaler_dw, enable_noise,
-                 enable_SAF, enable_ec_SAF):
+                 enable_SAF, enable_ec_SAF, quantize=8, weight_precision=None):
         super(Net, self).__init__()
-        # self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
-        # self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        # self.conv2_drop = nn.Dropout2d()
-        # self.fc1 = nn.Linear(320, 50)
-        # self.fc2 = nn.Linear(50, 10)
-        self.conv1 = crxb_Conv2d(1, 10, kernel_size=5, crxb_size=crxb_size, scaler_dw=scaler_dw,
-                                 gwire=gwire, gload=gload, gmax=gmax, gmin=gmin, vdd=vdd, freq=freq, temp=temp,
-                                 enable_SAF=enable_SAF, enable_ec_SAF=enable_ec_SAF,
-                                 enable_noise=enable_noise, ir_drop=ir_drop, device=device)
-        self.conv2 = crxb_Conv2d(10, 20, kernel_size=5, crxb_size=crxb_size, scaler_dw=scaler_dw,
-                                 gwire=gwire, gload=gload, gmax=gmax, gmin=gmin, vdd=vdd, freq=freq, temp=temp,
-                                 enable_SAF=enable_SAF, enable_ec_SAF=enable_ec_SAF,
-                                 enable_noise=enable_noise, ir_drop=ir_drop, device=device)
+
+        crxb_cfg = dict(crxb_size=crxb_size, scaler_dw=scaler_dw,
+                        gwire=gwire, gload=gload, gmax=gmax, gmin=gmin,
+                        vdd=vdd, freq=freq, temp=temp,
+                        enable_SAF=enable_SAF, enable_ec_SAF=enable_ec_SAF,
+                        enable_noise=enable_noise, ir_drop=ir_drop,
+                        device=device, quantize=quantize,
+                        weight_precision=weight_precision)
+
+        self.conv1 = crxb_Conv2d(1, 10, kernel_size=5, **crxb_cfg)
+        self.conv2 = crxb_Conv2d(10, 20, kernel_size=5, **crxb_cfg)
         self.conv2_drop = nn.Dropout2d()
-        self.fc1 = crxb_Linear(320, 50, crxb_size=crxb_size, scaler_dw=scaler_dw,
-                               gmax=gmax, gmin=gmin, gwire=gwire, gload=gload, freq=freq, temp=temp,
-                               vdd=vdd, ir_drop=ir_drop, device=device, enable_noise=enable_noise,
-                               enable_ec_SAF=enable_ec_SAF, enable_SAF=enable_SAF)
-        self.fc2 = crxb_Linear(50, 10, crxb_size=crxb_size, scaler_dw=scaler_dw,
-                               gmax=gmax, gmin=gmin, gwire=gwire, gload=gload, freq=freq, temp=temp,
-                               vdd=vdd, ir_drop=ir_drop, device=device, enable_noise=enable_noise,
-                               enable_ec_SAF=enable_ec_SAF, enable_SAF=enable_SAF)
+        self.fc1 = crxb_Linear(320, 50, **crxb_cfg)
+        self.fc2 = crxb_Linear(50, 10, **crxb_cfg)
 
     def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
@@ -185,10 +177,13 @@ def main():
     parser.add_argument('--enable_ec_SAF', action='store_true', default=False,
                         help='switch to turn on SAF error correction')
     parser.add_argument('--freq', type=float, default=10e6,
-                        help='scaler to compress the conductance')
+                        help='operating frequency')
     parser.add_argument('--temp', type=float, default=300,
-                        help='scaler to compress the conductance')
-
+                        help='operating temperature')
+    parser.add_argument('--quantize', type=int, default=8,
+                        help='quantization resolution of the crossbar')
+    parser.add_argument('--weight_precision', type=int, default=None,
+                        help='bit precision for ReRAM conductance levels (default: same as quantize)')
 
     args = parser.parse_args()
 
@@ -227,7 +222,8 @@ def main():
 
     model = Net(crxb_size=args.crxb_size, gmax=args.gmax, gmin=args.gmin, gwire=args.gwire, gload=args.gload,
                 vdd=args.vdd, ir_drop=args.ir_drop, device=device, scaler_dw=args.scaler_dw, freq=args.freq, temp=args.temp,
-                enable_SAF=args.enable_SAF, enable_noise=args.enable_noise, enable_ec_SAF=args.enable_ec_SAF).to(device)
+                enable_SAF=args.enable_SAF, enable_noise=args.enable_noise, enable_ec_SAF=args.enable_ec_SAF,
+                quantize=args.quantize, weight_precision=args.weight_precision).to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
     criterion = torch.nn.NLLLoss().to(device)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2,
