@@ -227,7 +227,7 @@ def main():
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
     criterion = torch.nn.NLLLoss().to(device)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2,
-                                                           patience=2, verbose=True, threshold=0.5,
+                                                           patience=2, threshold=0.5,
                                                            threshold_mode='rel', min_lr=1e-4)
     loss_log = []
     if not args.test:
