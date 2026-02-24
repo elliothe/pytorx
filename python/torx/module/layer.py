@@ -36,14 +36,15 @@ class crxb_Conv2d(nn.Conv2d):
         temp(float): operating temperature of ReRAM crossbar.
         crxb_size(int): size of the crossbar.
         quantize(int): quantization resolution of the crossbar.
+        device_precision(int): bit precision for ReRAM conductance levels. If None, defaults to quantize.
         enable_SAF(bool): switch to enable SAF
         enable_ec_SAF(bool): switch to enable SAF error correction.
     """
 
     def __init__(self, in_channels, out_channels, kernel_size, ir_drop, device, gmax, gmin, gwire,
                  gload, scaler_dw=1, vdd=3.3, stride=1, padding=0, dilation=1, enable_noise=True,
-                 freq=10e6, temp=300, groups=1, bias=True, crxb_size=64, quantize=8, enable_SAF=False,
-                 enable_ec_SAF=False):
+                 freq=10e6, temp=300, groups=1, bias=True, crxb_size=64, quantize=8, device_precision=None,
+                 enable_SAF=False, enable_ec_SAF=False):
         super(crxb_Conv2d, self).__init__(in_channels, out_channels, kernel_size,
                                           stride, padding, dilation, groups, bias)
 
@@ -78,7 +79,8 @@ class crxb_Conv2d(nn.Conv2d):
         # ReRAM cells
         self.Gmax = gmax  # max conductance
         self.Gmin = gmin  # min conductance
-        self.delta_g = (self.Gmax - self.Gmin) / (2 ** (quantize - 1))  # conductance step
+        self.device_precision = device_precision if device_precision is not None else quantize
+        self.delta_g = (self.Gmax - self.Gmin) / (2 ** (self.device_precision - 1))  # conductance step
         self.w2g = w2g(self.delta_g, Gmin=self.Gmin, G_SA0=self.Gmax,
                        G_SA1=self.Gmin, weight_shape=weight_crxb.shape, enable_SAF=enable_SAF)
         self.Gwire = gwire
@@ -269,13 +271,14 @@ class crxb_Linear(nn.Linear):
         temp(float): operating temperature of ReRAM crossbar.
         crxb_size(int): size of the crossbar.
         quantize(int): quantization resolution of the crossbar.
+        device_precision(int): bit precision for ReRAM conductance levels. If None, defaults to quantize.
         enable_SAF(bool): switch to enable SAF
         enable_ec_SAF(bool): switch to enable SAF error correction.
     """
 
     def __init__(self, in_features, out_features, ir_drop, device, gmax, gmin, gwire, gload, freq=10e6,
-                 vdd=3.3, scaler_dw=1, temp=300, bias=True, crxb_size=64, quantize=8, enable_ec_SAF=False,
-                 enable_noise=True, enable_SAF=False):
+                 vdd=3.3, scaler_dw=1, temp=300, bias=True, crxb_size=64, quantize=8, device_precision=None,
+                 enable_ec_SAF=False, enable_noise=True, enable_SAF=False):
         super(crxb_Linear, self).__init__(in_features, out_features, bias)
 
         self.ir_drop = ir_drop
@@ -304,7 +307,8 @@ class crxb_Linear(nn.Linear):
         # ReRAM cells
         self.Gmax = gmax  # max conductance
         self.Gmin = gmin  # min conductance
-        self.delta_g = (self.Gmax - self.Gmin) / (2 ** (quantize - 1))  # conductance step
+        self.device_precision = device_precision if device_precision is not None else quantize
+        self.delta_g = (self.Gmax - self.Gmin) / (2 ** (self.device_precision - 1))  # conductance step
         self.w2g = w2g(self.delta_g, Gmin=self.Gmin, G_SA0=self.Gmax,
                        G_SA1=self.Gmin, weight_shape=weight_crxb.shape, enable_SAF=enable_SAF)
         self.Gwire = gwire
