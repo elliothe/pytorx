@@ -4,6 +4,9 @@
 HOST=$(hostname)
 echo "Current host is: $HOST"
 
+# Default PYTORX_HOME to the directory containing this script
+PYTORX_HOME="${PYTORX_HOME:-$(cd "$(dirname "$0")" && pwd)}"
+PYTHON="${PYTHON:-python3}"
 
 # path to benchmark
 benchmark="$PYTORX_HOME/benchmark/cifar10.py"
