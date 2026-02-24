@@ -78,7 +78,7 @@ class crxb_Conv2d(nn.Conv2d):
         # ReRAM cells
         self.Gmax = gmax  # max conductance
         self.Gmin = gmin  # min conductance
-        self.delta_g = (self.Gmax - self.Gmin) / (2 ** 7)  # conductance step
+        self.delta_g = (self.Gmax - self.Gmin) / (2 ** (quantize - 1))  # conductance step
         self.w2g = w2g(self.delta_g, Gmin=self.Gmin, G_SA0=self.Gmax,
                        G_SA1=self.Gmin, weight_shape=weight_crxb.shape, enable_SAF=enable_SAF)
         self.Gwire = gwire
@@ -304,7 +304,7 @@ class crxb_Linear(nn.Linear):
         # ReRAM cells
         self.Gmax = gmax  # max conductance
         self.Gmin = gmin  # min conductance
-        self.delta_g = (self.Gmax - self.Gmin) / (2 ** 7)  # conductance step
+        self.delta_g = (self.Gmax - self.Gmin) / (2 ** (quantize - 1))  # conductance step
         self.w2g = w2g(self.delta_g, Gmin=self.Gmin, G_SA0=self.Gmax,
                        G_SA1=self.Gmin, weight_shape=weight_crxb.shape, enable_SAF=enable_SAF)
         self.Gwire = gwire
