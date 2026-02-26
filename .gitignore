@@ -6,4 +6,8 @@ data
 .vs
 
 # ignore compiled python
-.pyc
+__pycache__/
+*.pyc
+
+# model checkpoints
+*.pth.tar

@@ -59,10 +59,11 @@ class w2g(nn.Module):
         return output
 
     def error_compensation(self):
-        pos_SA0 = self.SAF_pos.index_SA0().float().cuda()
-        pos_SA1 = self.SAF_pos.index_SA1().float().cuda()
-        neg_SA0 = self.SAF_neg.index_SA0().float().cuda()
-        neg_SA1 = self.SAF_neg.index_SA1().float().cuda()
+        device = self.G_pos.device
+        pos_SA0 = self.SAF_pos.index_SA0().float().to(device)
+        pos_SA1 = self.SAF_pos.index_SA1().float().to(device)
+        neg_SA0 = self.SAF_neg.index_SA0().float().to(device)
+        neg_SA1 = self.SAF_neg.index_SA1().float().to(device)
         G_pos_diff = (self.G_pos-self.G_SA0)*pos_SA0 + \
             (self.G_pos-self.G_SA1)*pos_SA1
         G_neg_diff = (self.G_neg-self.G_SA0)*neg_SA0 + \

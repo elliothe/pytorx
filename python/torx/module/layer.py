@@ -36,14 +36,15 @@ class crxb_Conv2d(nn.Conv2d):
         temp(float): operating temperature of ReRAM crossbar.
         crxb_size(int): size of the crossbar.
         quantize(int): quantization resolution of the crossbar.
+        weight_precision(int): bit precision for ReRAM conductance levels. If None, defaults to quantize.
         enable_SAF(bool): switch to enable SAF
         enable_ec_SAF(bool): switch to enable SAF error correction.
     """
 
     def __init__(self, in_channels, out_channels, kernel_size, ir_drop, device, gmax, gmin, gwire,
                  gload, scaler_dw=1, vdd=3.3, stride=1, padding=0, dilation=1, enable_noise=True,
-                 freq=10e6, temp=300, groups=1, bias=True, crxb_size=64, quantize=8, enable_SAF=False,
-                 enable_ec_SAF=False):
+                 freq=10e6, temp=300, groups=1, bias=True, crxb_size=64, quantize=8, weight_precision=None,
+                 enable_SAF=False, enable_ec_SAF=False):
         super(crxb_Conv2d, self).__init__(in_channels, out_channels, kernel_size,
                                           stride, padding, dilation, groups, bias)
 
@@ -78,7 +79,8 @@ class crxb_Conv2d(nn.Conv2d):
         # ReRAM cells
         self.Gmax = gmax  # max conductance
         self.Gmin = gmin  # min conductance
-        self.delta_g = (self.Gmax - self.Gmin) / (2 ** 7)  # conductance step
+        self.weight_precision = weight_precision if weight_precision is not None else quantize
+        self.delta_g = (self.Gmax - self.Gmin) / (2 ** (self.weight_precision - 1))  # conductance step
         self.w2g = w2g(self.delta_g, Gmin=self.Gmin, G_SA0=self.Gmax,
                        G_SA1=self.Gmin, weight_shape=weight_crxb.shape, enable_SAF=enable_SAF)
         self.Gwire = gwire
@@ -156,13 +158,8 @@ class crxb_Conv2d(nn.Conv2d):
 
         # this block is for introducing stochastic noise into ReRAM conductance
         if self.enable_stochastic_noise:
-            rand_p = nn.Parameter(torch.Tensor(G_crxb.shape),
-                                   requires_grad=False)
-            rand_g = nn.Parameter(torch.Tensor(G_crxb.shape),
-                                  requires_grad=False)
-            if self.device.type == "cuda":
-                rand_p = rand_p.cuda()
-                rand_g = rand_g.cuda()
+            rand_p = torch.empty(G_crxb.shape, device=self.device)
+            rand_g = torch.empty(G_crxb.shape, device=self.device)
             with torch.no_grad():
                 input_reduced = (input_crxb.norm(p=2, dim=0).norm(p=2, dim=3).unsqueeze(dim=3)) / \
                                 (input_crxb.shape[0] * input_crxb.shape[3])
@@ -178,7 +175,7 @@ class crxb_Conv2d(nn.Conv2d):
                 G_p = G_crxb * (self.b * G_crxb + self.a) / (G_crxb - (self.b * G_crxb + self.a))
                 G_p[rand_p.ge(self.tau)] = 0
                 G_g = grms * rand_g
-            G_crxb += (G_g.cuda() + G_p)
+            G_crxb += (G_g + G_p)
 
 
         # this block is to calculate the ir drop of the crossbar
@@ -274,13 +271,14 @@ class crxb_Linear(nn.Linear):
         temp(float): operating temperature of ReRAM crossbar.
         crxb_size(int): size of the crossbar.
         quantize(int): quantization resolution of the crossbar.
+        weight_precision(int): bit precision for ReRAM conductance levels. If None, defaults to quantize.
         enable_SAF(bool): switch to enable SAF
         enable_ec_SAF(bool): switch to enable SAF error correction.
     """
 
     def __init__(self, in_features, out_features, ir_drop, device, gmax, gmin, gwire, gload, freq=10e6,
-                 vdd=3.3, scaler_dw=1, temp=300, bias=True, crxb_size=64, quantize=8, enable_ec_SAF=False,
-                 enable_noise=True, enable_SAF=False):
+                 vdd=3.3, scaler_dw=1, temp=300, bias=True, crxb_size=64, quantize=8, weight_precision=None,
+                 enable_ec_SAF=False, enable_noise=True, enable_SAF=False):
         super(crxb_Linear, self).__init__(in_features, out_features, bias)
 
         self.ir_drop = ir_drop
@@ -309,7 +307,8 @@ class crxb_Linear(nn.Linear):
         # ReRAM cells
         self.Gmax = gmax  # max conductance
         self.Gmin = gmin  # min conductance
-        self.delta_g = (self.Gmax - self.Gmin) / (2 ** 7)  # conductance step
+        self.weight_precision = weight_precision if weight_precision is not None else quantize
+        self.delta_g = (self.Gmax - self.Gmin) / (2 ** (self.weight_precision - 1))  # conductance step
         self.w2g = w2g(self.delta_g, Gmin=self.Gmin, G_SA0=self.Gmax,
                        G_SA1=self.Gmin, weight_shape=weight_crxb.shape, enable_SAF=enable_SAF)
         self.Gwire = gwire
@@ -375,14 +374,8 @@ class crxb_Linear(nn.Linear):
         # 2.4. compute matrix multiplication
         # this block is for introducing stochastic noise into ReRAM conductance
         if self.enable_stochastic_noise:
-            rand_p = nn.Parameter(torch.Tensor(G_crxb.shape),
-                                  requires_grad=False)
-            rand_g = nn.Parameter(torch.Tensor(G_crxb.shape),
-                                  requires_grad=False)
-
-            if self.device.type == "cuda":
-                rand_p = rand_p.cuda()
-                rand_g = rand_g.cuda()
+            rand_p = torch.empty(G_crxb.shape, device=self.device)
+            rand_g = torch.empty(G_crxb.shape, device=self.device)
 
             with torch.no_grad():
                 input_reduced = input_crxb.norm(p=2, dim=0).norm(p=2, dim=3).unsqueeze(dim=3) / (

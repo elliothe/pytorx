@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+
+############### Host   ##############################
+HOST=$(hostname)
+echo "Current host is: $HOST"
+
+# Default PYTORX_HOME to the directory containing this script
+PYTORX_HOME="${PYTORX_HOME:-$(cd "$(dirname "$0")" && pwd)}"
+PYTHON="${PYTHON:-python3}"
+
+# path to benchmark
+benchmark="$PYTORX_HOME/benchmark/cifar100.py"
+
+
+############### Neural network ############################
+epochs=200
+batch_size=128
+test_batch_size=100
+crxb_size=64
+vdd=3.3
+gwire=0.375
+gload=0.25
+gmax=0.000333
+gmin=0.0000000333
+freq=10e6
+
+{
+$PYTHON $benchmark  --epochs $epochs \
+                    --batch_size $batch_size\
+                    --test_batch_size $test_batch_size\
+                    --crxb_size $crxb_size\
+                    --vdd $vdd\
+                    --freq $freq\
+                    --gwire $gwire\
+                    --gload $gload\
+                    --gmax $gmax\
+                    --gmin $gmin
+} &
